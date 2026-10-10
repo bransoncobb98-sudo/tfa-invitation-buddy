@@ -226,5 +226,5 @@ The test case was a detailed-mode Foster-style swing: PF, World Schools, Congres
 ## Not tested here
 
 - **Pasting into Tabroom's editor.** The HTML is deliberately simple, but this hasn't been confirmed. See the README.
-- **Real-browser localStorage over `https://`.** It was simulated. It should be confirmed once the site is on GitHub Pages.
+- ~~Real-browser localStorage over `https://`~~: **confirmed** on the live GitHub Pages site (2026-10-10). Storage works and the "not saving" notice stays hidden.
 - **Safari and Firefox.** Only Chromium-based browsers were tested.
