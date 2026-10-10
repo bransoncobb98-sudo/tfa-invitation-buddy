@@ -1,0 +1,2190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; base-uri 'none'; form-action 'none'">
+<meta name="color-scheme" content="light dark">
+<title>TFA Invitation Buddy</title>
+<meta name="description" content="TFA Invitation Buddy. Answer a few questions, and get a rules-ready tournament invitation you can paste into Tabroom.">
+<link rel="icon" href="data:,">
+<style>
+/* ===================== Theme ===================== */
+/* Palette inspired by Texas forensics colors: royal blue, gold, flame orange, red, black, steel blue.
+   (No logo or official marks are used. The tool is independent; see the disclaimer.) */
+:root{
+  --royal:#0b14c9; --royal-deep:#070d8a; --gold:#ffd24a; --flame:#f2a516; --red:#e5141b; --ink:#0d0d12;
+  --bg:#e3ebf3; --surface:#ffffff; --surface2:#eef3f8; --text:#0d0d12; --muted:#3f4757;
+  --border:#7d8aa0; --accent:#0b14c9; --accent-hover:#070d8a; --on-accent:#ffffff; --focus:#e5141b;
+  --ok:#14612e; --ok-bg:#e1f1e6; --warn:#6b3f00; --warn-bg:#fff0c7; --bad:#b0101a; --bad-bg:#fde4e3;
+  --note:#0a1290; --note-bg:#e6e9ff; --paper:#ffffff; --paper-text:#0d0d12;
+  --head-bg:#0b14c9; --head-text:#ffffff; --head-gold:#ffd24a;
+  --display:Rockwell,"Rockwell Nova","Roboto Slab","Bookman Old Style",Georgia,serif;
+  --radius:10px; --shadow:0 1px 2px rgba(7,13,138,.08),0 3px 10px rgba(7,13,138,.06);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#080b2b; --surface:#11163f; --surface2:#1a2056; --text:#eef0fa; --muted:#b4bbd6;
+    --border:#6874bd; --accent:#ffd24a; --accent-hover:#ffe28a; --on-accent:#0d0d12; --focus:#ff6b6f;
+    --ok:#8fdba7; --ok-bg:#12301f; --warn:#ffd57f; --warn-bg:#352a0c; --bad:#ff9c9f; --bad-bg:#3d1219;
+    --note:#c3c9ff; --note-bg:#1b2263; --paper:#11163f; --paper-text:#eef0fa;
+    --head-bg:#070d8a; --head-text:#ffffff; --head-gold:#ffd24a;
+    --shadow:none;
+  }
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+a{color:var(--accent)}
+a:hover{color:var(--accent-hover)}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.skip{position:absolute;left:8px;top:-60px;background:var(--surface);color:var(--text);padding:8px 12px;border-radius:6px;z-index:100}
+.skip:focus{top:8px}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{line-height:1.25}
+.card h2,.step-title,dialog h2,.preview-head h2{font-family:var(--display);font-weight:800;letter-spacing:.01em}
+.card h2::after,.step-title::after{content:"";display:block;width:56px;height:4px;margin-top:6px;background:linear-gradient(90deg,var(--red) 0 50%,var(--flame) 50% 100%);border-radius:2px}
+
+/* ===================== Header ===================== */
+.site-header{background:var(--head-bg);color:var(--head-text);border-bottom:6px solid var(--red);box-shadow:inset 0 -3px 0 var(--head-gold)}
+.site-header :focus-visible{outline-color:var(--head-gold)}
+.header-inner{max-width:1400px;margin:0 auto;padding:14px 16px 16px;display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between}
+.brand h1{margin:0;font-family:var(--display);font-size:1.6rem;font-weight:800;letter-spacing:.02em;color:var(--head-gold);text-shadow:2px 2px 0 var(--ink)}
+.brand h1 .flame{color:var(--flame)}
+.brand p{margin:4px 0 0;color:var(--head-text);font-size:.95rem;max-width:46ch}
+.mode-switch{border:0;margin:0;padding:0;min-width:0}
+.mode-switch legend{font-size:.78rem;font-weight:700;color:var(--head-gold);margin-bottom:4px;padding:0;text-transform:uppercase;letter-spacing:.06em}
+.seg{display:flex;flex-wrap:wrap;border:2px solid var(--head-gold);border-radius:12px;overflow:hidden;background:var(--royal-deep)}
+.seg input{position:absolute;opacity:0;width:1px;height:1px}
+.seg label{flex:1 1 auto;text-align:center;padding:8px 14px;cursor:pointer;font-weight:700;font-size:.92rem;color:#fff}
+.seg input:checked+label{background:var(--head-gold);color:var(--ink)}
+.seg input:focus-visible+label{outline:3px solid #fff;outline-offset:-4px}
+
+/* ===================== Banners & buttons ===================== */
+.banner{max-width:1400px;margin:12px auto 0;padding:10px 14px;border-radius:var(--radius);border:1px solid var(--warn);background:var(--warn-bg);color:var(--warn)}
+.wrap{max-width:1400px;margin:0 auto;padding:16px}
+.btn{display:inline-flex;align-items:center;gap:6px;border:2px solid var(--accent);background:var(--surface);color:var(--accent);border-radius:8px;padding:8px 14px;font-weight:600;cursor:pointer;min-height:44px;text-decoration:none}
+.btn:hover{background:var(--surface2)}
+.btn.primary{background:var(--accent);color:var(--on-accent)}
+.btn.primary:hover{background:var(--accent-hover);border-color:var(--accent-hover)}
+.btn.danger{border-color:var(--bad);color:var(--bad)}
+.btn[disabled],.btn[aria-disabled="true"]{opacity:.5;cursor:not-allowed}
+.btn.small{min-height:34px;padding:4px 10px;font-size:.88rem}
+.link-btn{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;cursor:pointer;font:inherit}
+.btn-row{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+
+/* ===================== Intro ===================== */
+.intro{max-width:880px;margin:0 auto}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);margin-bottom:16px}
+.card h2{margin-top:0}
+.mode-cards{display:grid;gap:12px;grid-template-columns:1fr}
+@media(min-width:700px){.mode-cards{grid-template-columns:1fr 1fr}}
+.mode-card{border:2px solid var(--border);border-radius:var(--radius);padding:14px;cursor:pointer;display:block;background:var(--surface)}
+.mode-card:has(input:checked){border-color:var(--accent);background:var(--note-bg)}
+.mode-card input{margin-right:8px;width:18px;height:18px;vertical-align:-3px}
+.mode-card strong{font-size:1.05rem}
+.mode-card span.desc{display:block;color:var(--muted);margin-top:6px;font-size:.95rem}
+.disclaimer{font-size:.9rem;color:var(--muted)}
+
+/* ===================== App layout ===================== */
+.tabs{display:flex;gap:4px;margin-bottom:12px}
+.tabs button{flex:1;padding:10px;border:2px solid var(--accent);background:var(--surface);color:var(--accent);font-weight:600;border-radius:8px;cursor:pointer;min-height:44px}
+.tabs button[aria-selected="true"]{background:var(--accent);color:var(--on-accent)}
+.layout{display:block}
+.pane-preview{display:none}
+body.show-preview .pane-form{display:none}
+body.show-preview .pane-preview{display:block}
+@media(min-width:1000px){
+  .tabs{display:none}
+  .layout{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:24px;align-items:start}
+  .pane-form,.pane-preview,body.show-preview .pane-form,body.show-preview .pane-preview{display:block}
+  .pane-preview{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}
+}
+
+/* ===================== Progress ===================== */
+.progress{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px}
+.progress-top{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-weight:600}
+.bar{height:8px;background:var(--surface2);border-radius:99px;margin:8px 0 10px;overflow:hidden;border:1px solid var(--border)}
+.bar>span{display:block;height:100%;background:linear-gradient(90deg,var(--red),var(--flame),var(--gold))}
+.card,.q,.progress,.preview-card{border-top:4px solid var(--accent)}
+.preview-head{background:var(--surface2)}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.steps button{border:1px solid var(--border);background:var(--surface2);border-radius:99px;padding:4px 10px;cursor:pointer;font-size:.85rem;min-height:32px}
+.steps button[aria-current="step"]{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+
+/* ===================== Questions ===================== */
+.step-title{margin:4px 0 12px;font-size:1.4rem}
+.q{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
+.q-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.q-head h3{margin:0;font-size:1.1rem;flex:1 1 220px}
+.q-head h3:focus{outline:none}
+.q-head h3:focus-visible{outline:3px solid var(--focus)}
+.qid{display:inline-block;font-size:.78rem;font-weight:700;color:var(--muted);border:1px solid var(--border);border-radius:5px;padding:0 5px;margin-right:6px;vertical-align:2px}
+.tag{font-size:.75rem;font-weight:700;padding:2px 8px;border-radius:99px;text-transform:uppercase;letter-spacing:.03em;border:1px solid}
+.tag.Required{color:var(--bad);background:var(--bad-bg);border-color:var(--bad)}
+.tag.Conditional{color:var(--warn);background:var(--warn-bg);border-color:var(--warn)}
+.tag.Optional{color:var(--muted);background:var(--surface2);border-color:var(--border)}
+.why-btn{border:1px solid var(--accent);color:var(--accent);background:var(--surface);border-radius:99px;padding:2px 10px;font-size:.85rem;cursor:pointer;min-height:32px;font-weight:600}
+.why{margin:10px 0 0;padding:10px 12px;background:var(--note-bg);color:var(--note);border-radius:8px;font-size:.93rem}
+.help{color:var(--muted);margin:8px 0 4px;font-size:.95rem}
+.field{margin:14px 0 0}
+.field>label,.field legend{font-weight:600;display:block;margin-bottom:4px;padding:0}
+.fhelp{color:var(--muted);font-size:.88rem;margin:0 0 4px}
+fieldset.field{border:0;padding:0;min-width:0}
+input[type=text],input[type=email],input[type=tel],input[type=url],input[type=date],input[type=number],input[type=time],select,textarea{
+  width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);min-height:42px}
+input[aria-invalid=true],textarea[aria-invalid=true],select[aria-invalid=true]{border:2px solid var(--bad)}
+textarea{resize:vertical}
+.opt{display:flex;gap:8px;align-items:flex-start;padding:5px 0;cursor:pointer}
+.opt input{width:20px;height:20px;margin-top:2px;flex:none}
+.opt-inline{display:flex;flex-wrap:wrap;gap:4px 18px}
+.half-row{display:grid;grid-template-columns:1fr;gap:0 14px}
+@media(min-width:560px){.half-row{grid-template-columns:1fr 1fr}}
+.msgs:empty{display:none}
+.msgs{margin-top:12px;display:grid;gap:6px}
+.msg{padding:8px 10px;border-radius:7px;font-size:.93rem;border-left:5px solid}
+.msg.block{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.msg.warn{background:var(--warn-bg);color:var(--warn);border-color:var(--warn)}
+.msg.note{background:var(--note-bg);color:var(--note);border-color:var(--note)}
+.inline-note{margin-top:12px}
+.group-box{border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-top:10px}
+.group-box legend{font-weight:700;padding:0 4px}
+.computed{margin-top:8px;font-size:.93rem;color:var(--muted)}
+
+/* editable tables */
+.tbl-wrap{overflow-x:auto}
+table.edit{width:100%;border-collapse:collapse}
+table.edit th,table.edit td{padding:4px;text-align:left;vertical-align:top}
+table.edit thead th{font-size:.85rem;color:var(--muted)}
+table.edit tbody th{font-size:.85rem;font-weight:600;white-space:nowrap;padding-top:12px}
+.tbl-empty{color:var(--muted);font-size:.9rem}
+@media(max-width:640px){
+  table.edit thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+  table.edit,table.edit tbody,table.edit tr,table.edit td,table.edit tbody th{display:block;width:100%}
+  table.edit tr{border:1px solid var(--border);border-radius:8px;padding:6px 8px;margin-bottom:8px}
+  table.edit td[data-label]::before{content:attr(data-label);display:block;font-size:.8rem;font-weight:600;color:var(--muted)}
+  table.edit tbody th{padding-top:4px}
+}
+
+/* step nav */
+.step-nav{display:flex;justify-content:space-between;gap:8px;margin:18px 0 8px;flex-wrap:wrap}
+
+/* ===================== Preview ===================== */
+.preview-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.preview-head{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.preview-head h2{margin:0;font-size:1.05rem}
+.preview-status{font-size:.85rem;font-weight:600;padding:2px 8px;border-radius:99px;border:1px solid}
+.preview-status.bad{color:var(--bad);background:var(--bad-bg);border-color:var(--bad)}
+.preview-status.ok{color:var(--ok);background:var(--ok-bg);border-color:var(--ok)}
+.invitation{padding:18px 20px;background:var(--paper);color:var(--paper-text);overflow-wrap:anywhere;border-radius:0 0 var(--radius) var(--radius)}
+.invitation h2{font-size:1.25rem;margin:1.2em 0 .4em}
+.invitation h2:first-child{margin-top:0;font-size:1.5rem;font-family:var(--display)}
+.invitation h3{font-size:1.05rem;margin:1em 0 .3em}
+.invitation table{border-collapse:collapse;margin:.5em 0;max-width:100%}
+.invitation th,.invitation td{border:1px solid var(--border)!important}
+.invitation .empty{color:var(--muted);font-style:italic}
+
+/* ===================== Review ===================== */
+.checklist{list-style:none;padding:0;margin:8px 0 16px}
+.checklist li{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--border)}
+.status-pill{font-size:.78rem;font-weight:700;padding:1px 8px;border-radius:99px;border:1px solid;white-space:nowrap}
+.status-pill.pass{color:var(--ok);background:var(--ok-bg);border-color:var(--ok)}
+.status-pill.fail{color:var(--bad);background:var(--bad-bg);border-color:var(--bad)}
+.checklist .detail{flex-basis:100%;font-size:.9rem;color:var(--bad);margin-left:4px}
+.gate{border:2px solid var(--bad);background:var(--bad-bg);color:var(--bad);border-radius:var(--radius);padding:14px}
+.gate.ok{border-color:var(--ok);background:var(--ok-bg);color:var(--ok)}
+.raw{font-family:ui-monospace,Consolas,monospace;font-size:.82rem;min-height:180px}
+.hint{color:var(--muted);font-size:.92rem}
+.export-status{font-weight:600;color:var(--ok);min-height:1.5em}
+
+/* ===================== Footer ===================== */
+.site-footer{border-top:6px solid var(--red);background:var(--ink);color:#e6e8f2;margin-top:24px}
+.site-footer .wrap{font-size:.88rem;color:#e6e8f2}
+.site-footer a,.site-footer .link-btn{color:var(--gold)}
+.site-footer p{margin:6px 0}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:600;max-width:calc(100vw - 32px);opacity:0;pointer-events:none;transition:opacity .2s;z-index:50}
+.toast.show{opacity:1}
+
+dialog{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--text);max-width:min(560px,calc(100vw - 32px));padding:20px}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+dialog h2{margin-top:0;font-size:1.2rem}
+
+#print-root{display:none}
+
+/* ===================== Print (PDF) ===================== */
+@media print{
+  @page{size:letter;margin:0.75in 0.75in 0.85in;
+    @bottom-center{content:"Page " counter(page) " of " counter(pages);font-size:9pt;color:#555}}
+  html,body{background:#fff!important;color:#000!important}
+  body>*:not(#print-root){display:none!important}
+  #print-root{display:block!important;font:11pt/1.45 Georgia,"Times New Roman",serif;color:#000}
+  #print-root h2{font-family:system-ui,"Segoe UI",Arial,sans-serif;font-size:15pt;margin:16pt 0 6pt;break-after:avoid;page-break-after:avoid}
+  #print-root h2:first-child{font-size:20pt;margin-top:0}
+  #print-root h3{font-family:system-ui,"Segoe UI",Arial,sans-serif;font-size:12pt;margin:12pt 0 4pt;break-after:avoid;page-break-after:avoid}
+  #print-root p{orphans:3;widows:3;margin:0 0 6pt}
+  #print-root p:has(> strong:only-child){break-after:avoid;page-break-after:avoid}
+  #print-root li,#print-root tr{break-inside:avoid;page-break-inside:avoid}
+  #print-root table{border-collapse:collapse;width:100%}
+  #print-root thead{display:table-header-group}
+  #print-root th,#print-root td{border:1px solid #777!important}
+  #print-root a{color:#000}
+}
+@media (prefers-reduced-motion: reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to main content</a>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand">
+      <h1 id="app-title">TFA Invitation Buddy</h1>
+      <p id="app-tagline"></p>
+    </div>
+    <fieldset class="mode-switch">
+      <legend>Builder mode</legend>
+      <div class="seg" id="mode-seg"></div>
+    </fieldset>
+  </div>
+</header>
+
+<div id="storage-banner" class="banner" role="status" hidden>
+  Your browser is not letting this page save your answers. Everything still works, but your answers will be lost if you close or reload this page.
+</div>
+
+<main id="main" tabindex="-1">
+  <!-- Intro screen -->
+  <div id="screen-intro" class="wrap" hidden>
+    <div class="intro">
+      <section class="card" aria-labelledby="howto-h">
+        <h2 id="howto-h">How to use</h2>
+        <ol>
+          <li>Check the events your tournament will offer.</li>
+          <li>Answer the questions. Items marked "Required" are disclosures the TFA Constitution says must appear in your invitation.</li>
+          <li>Review the checklist and the live preview.</li>
+          <li>Copy the HTML into your Tabroom invitation, or export a PDF or Word copy.</li>
+        </ol>
+      </section>
+      <section class="card" aria-labelledby="choose-h">
+        <h2 id="choose-h">Choose what to build</h2>
+        <p class="hint">You can switch at any time with the "Builder mode" switch at the top of the page. Your answers are kept.</p>
+        <div class="mode-cards" id="intro-modes" role="radiogroup" aria-labelledby="choose-h"></div>
+        <div class="btn-row"><button type="button" class="btn primary" id="btn-start">Start</button></div>
+      </section>
+      <section class="card" aria-labelledby="about-h">
+        <h2 id="about-h">About</h2>
+        <p id="about-text"></p>
+        <p class="disclaimer"><strong>Disclaimer:</strong> <span class="js-disclaimer"></span></p>
+      </section>
+    </div>
+  </div>
+
+  <!-- Builder -->
+  <div id="screen-app" class="wrap" hidden>
+    <div class="tabs" role="tablist" aria-label="View">
+      <button type="button" role="tab" id="tab-form" aria-controls="pane-form" aria-selected="true">Questions</button>
+      <button type="button" role="tab" id="tab-preview" aria-controls="pane-preview" aria-selected="false">Preview</button>
+    </div>
+    <div class="layout">
+      <div class="pane-form" id="pane-form" role="tabpanel" aria-labelledby="tab-form">
+        <nav class="progress" aria-label="Progress">
+          <div class="progress-top"><span id="progress-label"></span><span id="progress-count"></span></div>
+          <div class="bar" role="progressbar" id="progress-bar" aria-valuemin="0" aria-valuemax="100" aria-label="Progress through steps"><span></span></div>
+          <ol class="steps" id="steps"></ol>
+        </nav>
+        <form id="form" novalidate onsubmit="return false">
+          <div id="step-body"></div>
+        </form>
+        <div class="step-nav">
+          <button type="button" class="btn" id="btn-back">&larr; Back</button>
+          <button type="button" class="btn primary" id="btn-next">Next &rarr;</button>
+        </div>
+      </div>
+      <aside class="pane-preview" id="pane-preview" role="tabpanel" aria-labelledby="tab-preview">
+        <div class="preview-card">
+          <div class="preview-head">
+            <h2>Live preview</h2>
+            <span id="preview-status" class="preview-status"></span>
+          </div>
+          <div class="invitation" id="preview-body"></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p><span class="js-disclaimer"></span></p>
+    <p><span id="footer-version"></span> &middot; <a id="footer-link" target="_blank" rel="noopener noreferrer"></a></p>
+    <p><button type="button" class="link-btn" id="btn-clear">Clear all answers</button> &middot; <button type="button" class="link-btn" id="btn-home">Back to the start screen</button></p>
+  </div>
+</footer>
+
+<div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<dialog id="dlg-clear" aria-labelledby="dlg-clear-h">
+  <h2 id="dlg-clear-h">Clear all answers?</h2>
+  <p>This erases every answer in this browser and starts over. It cannot be undone.</p>
+  <div class="btn-row"><button type="button" class="btn danger" id="dlg-clear-yes">Clear all answers</button><button type="button" class="btn" id="dlg-clear-no">Cancel</button></div>
+</dialog>
+
+<dialog id="dlg-override" aria-labelledby="dlg-override-h">
+  <h2 id="dlg-override-h">Generate with missing items?</h2>
+  <p><strong>These items still need attention:</strong></p>
+  <ul id="dlg-override-list"></ul>
+  <p>If you generate anyway, your invitation will be missing information. Required items are disclosures the TFA Constitution says must appear in your invitation.</p>
+  <div class="btn-row"><button type="button" class="btn primary" id="dlg-override-no">Go back and fix</button><button type="button" class="btn danger" id="dlg-override-yes">Generate anyway</button></div>
+</dialog>
+
+<div id="print-root" aria-hidden="true"></div>
+
+<script>
+"use strict";
+/* =============================================================================
+   CONFIGURATION: edit this section when the TFA rules change.
+   -----------------------------------------------------------------------------
+   Everything rule-related lives in CONFIG (site text, events, numbers) and RULES
+   (every question, its help/"Why?" text, validation, and output wording).
+   The engine and renderers below should not need changes for a normal rules year.
+   ============================================================================= */
+const CONFIG = {
+  toolName: "TFA Invitation Buddy",
+  tagline: "Answer a few questions, and get a rules-ready tournament invitation you can paste into Tabroom.",
+  // Rules version: shown in the footer and inside the About text. Change both together.
+  rulesVersion: "2026 TFA Constitution (revised Oct 2025)",
+  rulesVersionAbout: "2026 Constitution, revised October 2025",
+  tfaUrl: "https://texasforensicassociation.com/",
+  disclaimer: "TFA Invitation Buddy is an independent tool. It is not affiliated with, endorsed by, or sponsored by the Texas Forensic Association. It is provided as a convenience, does not constitute official guidance, and does not guarantee compliance. The tournament host is responsible for making sure the invitation and tournament follow the current TFA rules.",
+  storageKey: "tfa-invitation-buddy:v1",
+  footerLine: "Invitation prepared with TFA Invitation Buddy.",
+  tabroomHint: "In Tabroom's invitation editor, switch to HTML (source) mode before you paste, then check Tabroom's preview. Tabroom may change some formatting.",
+
+  modes: {
+    required: { label: "TFA Required Information Only",
+      desc: "Your tournament basics plus only the disclosures the TFA Constitution says must appear in an IQT invitation. Paste it into the invitation you already have." },
+    detailed: { label: "Detailed Invitation Builder",
+      desc: "A complete invitation: the required disclosures plus schedule, fees, judging, awards, logistics, contacts, and more." }
+  },
+
+  circuits: ["TFA", "TOC", "NIETOC", "NCFL"],
+  regions: ["Region 1", "Region 2", "Region 3", "Region 4", "Region 5"],
+
+  eventGroups: [
+    { id: "debate", label: "Debate", outLabel: "Debate Events" },
+    { id: "ie", label: "Individual events", outLabel: "Individual Events" }
+  ],
+  /* Event flags:
+     panel   -> C1a, C3, C4 (Policy, LD, PF, World Schools)
+     topic   -> C5a resolution box        ws -> C5b World Schools motions
+     prelims -> E2 preliminary-round count; minPrelims -> E2 warning (Requirements #8)
+     fee     -> which E5 fee line applies   minEntries -> E6 minimum entries (Qualifying Numbers 1) */
+  events: [
+    { id: "cx",   group: "debate", name: "Policy Debate",            panel: true, topic: true, prelims: true, minPrelims: 3, fee: "debate",   minEntries: "10 teams" },
+    { id: "ld",   group: "debate", name: "Lincoln-Douglas Debate",   panel: true, topic: true, prelims: true, minPrelims: 3, fee: "debate",   minEntries: "10 entries" },
+    { id: "pf",   group: "debate", name: "Public Forum Debate",      panel: true, topic: true, prelims: true, minPrelims: 3, fee: "debate",   minEntries: "10 teams" },
+    { id: "ws",   group: "debate", name: "World Schools Debate",     panel: true, ws: true,    prelims: true,                fee: "debate",   minEntries: "6 teams" },
+    { id: "cong", group: "debate", name: "Congressional Debate",     congress: true,                                         fee: "congress", minEntries: "10 entries" },
+    { id: "usx",  group: "ie", name: "United States Extemporaneous Speaking", fee: "ie", minEntries: "10 entries" },
+    { id: "ix",   group: "ie", name: "International Extemporaneous Speaking", fee: "ie", minEntries: "10 entries" },
+    { id: "oo",   group: "ie", name: "Original Oratory",                      fee: "ie", minEntries: "10 entries" },
+    { id: "inf",  group: "ie", name: "Informative Speaking",                  fee: "ie", minEntries: "10 entries" },
+    { id: "poi",  group: "ie", name: "Program Oral Interpretation",           fee: "ie", minEntries: "10 entries" },
+    { id: "di",   group: "ie", name: "Dramatic Interpretation",               fee: "ie", minEntries: "10 entries" },
+    { id: "hi",   group: "ie", name: "Humorous Interpretation",               fee: "ie", minEntries: "10 entries" },
+    { id: "duo",  group: "ie", name: "Duo Interpretation",                    fee: "ie", minEntries: "10 teams" },
+    { id: "duet", group: "ie", name: "Duet Acting",                           fee: "ie", minEntries: "10 teams" }
+  ],
+
+  minEvents: 4,             // Hosting an IQT, item 1
+  minSchoolsForPoints: 10,  // Qualifying Numbers 1
+  /* IQT date windows (Hosting an IQT, item 3). A "full calendar weekend" is Fri-Sat-Sun in one month.
+     A "tournament weekend" is Wednesday-Tuesday, so each window runs from the Wednesday before its first
+     weekend through the Tuesday after its last weekend (see DECISIONS.md). */
+  iqtWindows: {
+    fallStart:  { month: 7,  pick: "last" },          // last full weekend in August
+    fallEnd:    { month: 11, pick: 3 },               // third full weekend in December
+    excludeThanksgivingWeekend: true,
+    springStart:{ month: 0,  pick: 1, minDay: 2 },    // first full weekend in January following January 1
+    springEnd:  { month: 1,  pick: 2 },               // second full weekend in February
+    weekBefore: 2, weekAfter: 4                       // Fri-2 = Wednesday, Fri+4 = Tuesday
+  },
+  maxRoundsPerDay: 5, maxRoundsMinDays: 3,           // Requirements #26
+  // Schedule rows count as a "round" when an event is chosen and the activity matches this pattern.
+  roundPattern: /\b(round|rd\.?|prelim|preliminary|octo|octa|double|quarter|semi|final|elim|session)/i
+};
+
+/* ---------- small helpers used by RULES ---------- */
+const D = ["detailed"];                       // "detailed mode only"
+const YESNO = [{ v: "yes", l: "Yes" }, { v: "no", l: "No" }];
+/* C1: first round with guaranteed judge panels. "out" is the invitation wording. */
+const PANEL_ROUNDS = [
+  { v: "semis", l: "Semi-Finals", out: "beginning in semifinals" },
+  { v: "quarters", l: "Quarters", out: "beginning in quarterfinals" },
+  { v: "octos", l: "Octos", out: "beginning in octafinals" },
+  { v: "elims", l: "All Elim Rounds", out: "in all elimination rounds" },
+  { v: "all", l: "All Rounds (including prelims)", out: "in all rounds, including preliminary rounds" },
+  { v: "other", l: "Other" }
+];
+function str(v) { return typeof v === "string" ? v.trim() : (v == null ? "" : String(v)); }
+function isBlank(v) { return v == null || (typeof v === "string" && v.trim() === "") || (Array.isArray(v) && v.length === 0); }
+function evts(a, pred) { const on = a.events || []; return CONFIG.events.filter(e => on.includes(e.id) && (!pred || pred(e))); }
+function hasEvt(a, pred) { return evts(a, pred).length > 0; }
+function names(list) { return joinList(list.map(e => e.name)); }
+function joinList(arr) {
+  arr = arr.filter(Boolean);
+  if (arr.length <= 1) return arr.join("");
+  if (arr.length === 2) return arr[0] + " and " + arr[1];
+  return arr.slice(0, -1).join(", ") + ", and " + arr[arr.length - 1];
+}
+function hostNames(a) { return (a.a1_hosts || []).map(r => str(r && r.name)).filter(Boolean); }
+function hostLabel(a) { const h = hostNames(a); return h.length ? joinList(h) : "your school"; }
+function rows(a, key) { return (getPath(a, key) || []).filter(r => r && Object.values(r).some(v => !isBlank(v))); }
+function money(v) { v = str(v); if (!v) return ""; return /^\d/.test(v) ? "$" + v : v; }
+function isUrl(s) { return /^https?:\/\/\S+$/i.test(str(s)); }
+function isEmail(s) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(str(s)); }
+function c6Sessions(a) {
+  const n = Math.min(Math.max(parseInt(a.c6_prelims, 10) || 0, 0), 12);
+  const s = [];
+  for (let i = 1; i <= n; i++) s.push({ key: "p" + i, label: "Preliminary Session " + i });
+  if (a.c6_semis === "yes") s.push({ key: "semis", label: "Semifinals" });
+  if (n > 0) s.push({ key: "finals", label: "Finals" });
+  return s;
+}
+function c6Items(a, key) { // one line = one item, in debate order
+  return str(getPath(a, "c6_text." + key)).split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+}
+function wsRounds(a) { return (a.c5_ws_rounds || []).filter(Boolean); }
+
+/* Output block helpers (see "CONTENT MODEL" below). */
+const B = {
+  p: (...runs) => ({ t: "p", runs: runs.flat() }),
+  h4: (text) => ({ t: "h4", text }),
+  ul: (items) => ({ t: "ul", items: items.filter(Boolean) }),
+  ol: (items) => ({ t: "ol", items: items.filter(Boolean) }),
+  li: (...runs) => ({ runs: runs.flat() }),
+  label: (label, value) => [{ text: label + ": ", b: true }, ...textRuns(value)],
+  table: (head, body) => ({ t: "table", head, rows: body })
+};
+function textRuns(v) {
+  if (v && typeof v === "object" && !Array.isArray(v)) return [v];
+  if (Array.isArray(v)) return v;
+  const lines = str(v).split(/\r?\n/);
+  const out = [];
+  lines.forEach((ln, i) => { if (i) out.push({ br: true }); out.push(...linkify(ln)); });
+  return out;
+}
+/* Web addresses typed by the host become links (http/https only). Trailing punctuation stays text. */
+function linkify(line) {
+  const out = [], re = /https?:\/\/[^\s<>"]+/gi;
+  let last = 0, m;
+  while ((m = re.exec(line))) {
+    let url = m[0];
+    const trail = (/[.,;:!?)\]]+$/.exec(url) || [""])[0];
+    url = url.slice(0, url.length - trail.length);
+    if (m.index > last) out.push({ text: line.slice(last, m.index) });
+    out.push({ text: url, href: url });
+    last = m.index + url.length;
+  }
+  if (last < line.length || !out.length) out.push({ text: line.slice(last) });
+  return out;
+}
+function paras(v) { // long text -> paragraphs (blank line = new paragraph)
+  return str(v).split(/\r?\n\s*\r?\n/).map(s => s.trim()).filter(Boolean).map(s => B.p(textRuns(s)));
+}
+function linkOrText(v) { v = str(v); return isUrl(v) ? { text: v, href: v } : v; }
+
+/* =============================================================================
+   RULES: one entry per question in the Q&A spec (A1, B1, C1-C7, D1-D2, E1-E10), plus E11-E13 added from sample invitations.
+   Keys:
+     id, title, level ("Required" | "Conditional" | "Optional"), step (which form step)
+     modes      -> which builder modes show it (default: both)
+     shownWhen  -> (answers) => boolean   ("Shown when" column)
+     help, why  -> help text and the "Why?" tooltip with citation
+     fields     -> array (or (answers) => array) of inputs. Field keys:
+                   id, type, label, help, options, showIf(a), modes, required (block message), default
+     validate   -> (answers, add) => void; add.block(msg, fieldId), add.warn(msg), add.note(msg)
+     place      -> where its output goes ("section" or "section/subsection", see SECTIONS)
+     output     -> (answers) => array of content blocks. Blank answers produce nothing.
+   ============================================================================= */
+const RULES = [
+/* ---------------------------------------------------------------- A1 */
+{
+  id: "A1", title: "Tournament basics", level: "Required", step: "basics", place: "info",
+  shownWhen: () => true,
+  help: "Enter dates and deadlines exactly as you want schools to read them.",
+  helpDetailed: "Enter dates and deadlines exactly as you want schools to read them. Contact information is collected separately in E9.",
+  why: "Not a TFA disclosure rule. IQTs must be held inside TFA’s date windows (IQT Manual, Hosting an IQT, item 3, p. 96).",
+  fields: [
+    { id: "a1_name", type: "text", label: "Tournament name", required: "Enter the tournament name.", autocomplete: "off" },
+    { id: "a1_hosts", type: "table", label: "Host school(s)", help: "Add a row for each co-host school.",
+      columns: [{ key: "name", label: "School name", type: "text" }], rowLabel: i => "Host school " + (i + 1), addLabel: "Add another host school", minRows: 1 },
+    { id: "a1_swing", type: "checkbox", label: "This is a swing tournament" },
+    { id: "a1_swing_desc", modes: D, type: "textarea", rows: 3, label: "Describe the swing (optional)", showIf: a => !!a.a1_swing,
+      help: "For example: side names, which days are online or in person, and which events run on each side." },
+    { id: "a1_start", type: "date", label: "Start date", required: "Enter the tournament start date.", half: true, rerender: true },
+    { id: "a1_end", type: "date", label: "End date", required: "Enter the tournament end date.", half: true, rerender: true },
+    { id: "a1_circuits", type: "checkgroup", label: "Qualification offered (check all that apply)", inline: true,
+      options: CONFIG.circuits.map(c => ({ v: c, l: c })) },
+    { id: "a1_bids", modes: D, type: "textarea", rows: 2, label: "Bid and qualifier details (optional)",
+      showIf: a => (a.a1_circuits || []).some(c => c !== "TFA"),
+      help: "For example: TOC bids in LD (semifinals) and PF (finals); NIETOC qualifier in Friday-night IEs." },
+    { id: "a1_format", modes: D, type: "radio", label: "Format", inline: true,
+      options: [{ v: "inperson", l: "In person" }, { v: "virtual", l: "Virtual" }, { v: "hybrid", l: "Hybrid" }] },
+    { id: "a1_venue", modes: D, type: "text", label: "Venue name", showIf: a => ["inperson", "hybrid"].includes(a.a1_format) },
+    { id: "a1_address", modes: D, type: "textarea", rows: 2, label: "Venue address", showIf: a => ["inperson", "hybrid"].includes(a.a1_format) },
+    { id: "a1_platform", modes: D, type: "text", label: "Online platform", showIf: a => ["virtual", "hybrid"].includes(a.a1_format) },
+    { id: "a1_access", modes: D, type: "textarea", rows: 2, label: "How schools will access it", showIf: a => ["virtual", "hybrid"].includes(a.a1_format) },
+    { id: "a1_region", modes: D, type: "select", label: "TFA Region", options: CONFIG.regions.map(r => ({ v: r, l: r })) },
+    { id: "a1_register", modes: D, type: "text", label: "How to register (link or instructions)" },
+    { id: "a1_reg_open", modes: D, type: "text", label: "Registration opens", half: true },
+    { id: "a1_entry_deadline", modes: D, type: "text", label: "Entry deadline", placeholder: "For example: Monday, October 5, at 11:59 p.m.", half: true },
+    { id: "a1_fees_freeze", modes: D, type: "text", label: "Fees freeze (drops after this are charged)", half: true },
+    { id: "a1_drop_deadline", modes: D, type: "text", label: "Drop deadline", half: true },
+    { id: "a1_judge_due", modes: D, type: "text", label: "Judge information due", half: true }
+  ],
+  validate(a, add) {
+    if (!hostNames(a).length) add.block("Enter the host school.", "a1_hosts");
+    if (isBlank(a.a1_circuits)) add.block("Check at least one qualification offered.", "a1_circuits");
+    const s = parseISO(a.a1_start), e = parseISO(a.a1_end);
+    if (s && e && e < s) add.warn("The end date is before the start date.");
+    if (a.mode === "detailed" && s && e && e >= s && datesOutsideIQTWindow(s, e))
+      add.warn("These dates may fall outside the TFA window for IQTs (IQT Manual, Hosting item 3). Check with your Region Representative before publishing.");
+  },
+  output(a) {
+    const L = [];
+    const hosts = hostNames(a);
+    if (hosts.length) L.push(B.li(B.label("Hosted by", joinList(hosts))));
+    const d = formatDateRange(a.a1_start, a.a1_end);
+    if (d) L.push(B.li(B.label("Dates", d)));
+    if (a.mode === "detailed") {
+      const inPerson = ["inperson", "hybrid"].includes(a.a1_format), online = ["virtual", "hybrid"].includes(a.a1_format);
+      if (inPerson) {
+        const loc = [str(a.a1_venue), str(a.a1_address).replace(/\s*\r?\n\s*/g, ", ")].filter(Boolean).join(", ");
+        if (loc) L.push(B.li(B.label("Location", loc)));
+      }
+      if (online) {
+        const kind = a.a1_format === "hybrid" ? "Hybrid" : "Virtual";
+        const plat = str(a.a1_platform);
+        const runs = B.label("Format", kind + (plat ? " (" + plat + ")" : ""));
+        if (str(a.a1_access)) runs.push({ text: ". " }, { text: "Access: ", b: true }, ...textRuns(a.a1_access));
+        L.push(B.li(runs));
+      } else if (a.a1_format === "inperson" && !L.some(x => x.runs[0].text === "Location: ")) {
+        L.push(B.li(B.label("Format", "In person")));
+      }
+    }
+    if (a.a1_swing) {
+      if (a.mode === "detailed" && str(a.a1_swing_desc)) L.push(B.li(B.label("Swing tournament", a.a1_swing_desc)));
+      else L.push(B.li({ text: "This is a swing tournament." }));
+    }
+    if (a.mode === "detailed" && str(a.a1_region)) L.push(B.li(B.label("Region", a.a1_region)));
+    if (!isBlank(a.a1_circuits)) L.push(B.li(B.label("Qualification offered", joinList(CONFIG.circuits.filter(c => a.a1_circuits.includes(c))))));
+    if (a.mode === "detailed") {
+      if (str(a.a1_bids) && (a.a1_circuits || []).some(c => c !== "TFA")) L.push(B.li(B.label("Bids and qualifiers", a.a1_bids)));
+      if (str(a.a1_register)) L.push(B.li(B.label("Registration", [linkOrText(a.a1_register)].flatMap(textRunsOrLink))));
+      [["Registration opens", a.a1_reg_open], ["Entry deadline", a.a1_entry_deadline], ["Fees freeze", a.a1_fees_freeze],
+       ["Drop deadline", a.a1_drop_deadline], ["Judge information due", a.a1_judge_due]]
+        .forEach(([k, v]) => { if (str(v)) L.push(B.li(B.label(k, v))); });
+    }
+    return L.length ? [B.ul(L)] : [];
+  }
+},
+/* ---------------------------------------------------------------- E11 (added from sample invitations) */
+{
+  id: "E11", title: "Welcome letter and updates", level: "Optional", step: "welcome", modes: D, place: "welcome",
+  shownWhen: () => true,
+  help: "Many strong invitations open with a short letter from the directors and keep a dated list of updates at the top, so returning coaches can see what changed.",
+  why: "Not a TFA disclosure rule.",
+  fields: [
+    { id: "e11_updated", type: "text", label: "\"Last updated\" note (optional)", placeholder: "For example: October 1, 2026, at 9:30 a.m." },
+    { id: "e11_updates", type: "textarea", rows: 3, label: "Important updates (one per line, shown at the top)" },
+    { id: "e11_letter", type: "textarea", rows: 6, label: "Welcome letter", help: "Leave a blank line between paragraphs." },
+    { id: "e11_sign", type: "textarea", rows: 3, label: "Signed by (one person per line, with title)", placeholder: "Pat Coach, Director of Speech & Debate" }
+  ],
+  output(a) {
+    const out = [];
+    if (str(a.e11_updated)) out.push(B.p({ text: "Last updated: " + str(a.e11_updated), i: true }));
+    const up = str(a.e11_updates).split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    if (up.length) out.push({ t: "h3", text: "Important Updates" }, B.ul(up.map(s => B.li(textRuns(s)))));
+    out.push(...paras(a.e11_letter));
+    const sig = str(a.e11_sign).split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    if (sig.length) out.push(B.p(sig.flatMap((s, i) => i ? [{ br: true }, { text: s }] : [{ text: s }])));
+    return out;
+  }
+},
+/* ---------------------------------------------------------------- B1 */
+{
+  id: "B1", title: "Events offered", level: "Required", step: "events", place: "events",
+  shownWhen: () => true,
+  question: "Which TFA events will your tournament offer? Check every event you will offer.",
+  help: "Only the events you check appear anywhere in your invitation and exports. An IQT must sponsor at least four TFA events.",
+  why: "IQT Manual, Hosting an IQT, item 1 (p. 96): a qualifying tournament must sponsor at least four TFA events and follow TFA rules in all of them.",
+  fields: [
+    { id: "events", type: "events", label: "Events" },
+    { id: "b1_show", type: "checkbox", modes: ["required"], label: "Include an \"Events Offered\" list in my output", default: true },
+    { id: "b1_other", modes: D, type: "textarea", rows: 3, label: "Other events or divisions you will offer (optional, one per line)",
+      help: "Non-TFA events and divisions, such as Novice LD, Novice PF, Prose, Poetry, or Impromptu. These do not count toward the four-event minimum and do not turn on any TFA questions." }
+  ],
+  validate(a, add) {
+    const n = evts(a).length;
+    if (!n) add.block("Check at least one event.", "events");
+    else if (a.mode === "detailed" && n < CONFIG.minEvents) add.warn("A TFA IQT must sponsor at least four TFA events (IQT Manual, Hosting item 1).");
+  },
+  output(a) {
+    if (a.mode === "required" && a.b1_show === false) return [];
+    const out = [];
+    for (const g of CONFIG.eventGroups) {
+      const list = evts(a, e => e.group === g.id);
+      if (!list.length) continue;
+      out.push({ t: "h3", text: g.outLabel }, B.ul(list.map(e => B.li({ text: e.name }))));
+    }
+    const other = a.mode === "detailed" ? str(a.b1_other).split(/\r?\n/).map(s => s.trim()).filter(Boolean) : [];
+    if (other.length) out.push({ t: "h3", text: "Other Events and Divisions" }, B.ul(other.map(s => B.li({ text: s }))));
+    return out;
+  }
+},
+/* ---------------------------------------------------------------- C1 */
+{
+  id: "C1", title: "Judge paneling", level: "Required", step: "required", place: "disclosures/panels",
+  shownWhen: a => hasEvt(a, e => e.panel) || hasEvt(a, e => e.group === "ie"),
+  help: "Your invitation must say when judge panels will be used.",
+  why: "IQT Manual, Requirements #19 and #25a (pp. 101–102): a tournament must disclose in its invitation whether panels will be used in quarterfinals and beyond of debate events, and in finals of individual events, Duet Acting, and Duo Interpretation.",
+  fields: [
+    { id: "c1a_round", type: "select", label: "In debate events, what is the first round you guarantee to use judge panels?", showIf: a => hasEvt(a, e => e.panel),
+      options: PANEL_ROUNDS, required: "Choose the first debate round you guarantee to use judge panels." },
+    { id: "c1a_other", type: "text", label: "Describe when you will use judge panels in debate events", showIf: a => hasEvt(a, e => e.panel) && a.c1a_round === "other",
+      required: "Describe when you will use judge panels in debate events." },
+    { id: "c1a_size", modes: D, type: "select", label: "How many judges per panel?", showIf: a => hasEvt(a, e => e.panel) && !!a.c1a_round,
+      options: [{ v: "3", l: "3" }, { v: "5", l: "5" }, { v: "other", l: "Other" }] },
+    { id: "c1a_size_other", modes: D, type: "number", label: "Number of judges per panel", min: 1, showIf: a => hasEvt(a, e => e.panel) && !!a.c1a_round && a.c1a_size === "other" },
+    { id: "c1b_prior", type: "yesno", label: "Will you use judge panels in Individual Events prior to the finals round?", showIf: a => hasEvt(a, e => e.group === "ie"),
+      required: "Answer whether you will use judge panels in Individual Events before finals." },
+    { id: "c1b_round", type: "select", label: "In Individual Events, what is the first round you guarantee to use judge panels?", showIf: a => hasEvt(a, e => e.group === "ie") && a.c1b_prior === "yes",
+      options: PANEL_ROUNDS, required: "Choose the first Individual Events round you guarantee to use judge panels." },
+    { id: "c1b_other", type: "text", label: "Describe when you will use judge panels in Individual Events", showIf: a => hasEvt(a, e => e.group === "ie") && a.c1b_prior === "yes" && a.c1b_round === "other",
+      required: "Describe when you will use judge panels in Individual Events." },
+    { id: "c1b_size", modes: D, type: "select", label: "How many judges per panel?", showIf: a => hasEvt(a, e => e.group === "ie") && !!a.c1b_prior,
+      options: [{ v: "3", l: "3" }, { v: "5", l: "5" }, { v: "other", l: "Other" }] },
+    { id: "c1b_size_other", modes: D, type: "number", label: "Number of judges per panel", min: 1, showIf: a => hasEvt(a, e => e.group === "ie") && !!a.c1b_prior && a.c1b_size === "other" }
+  ],
+  validate(a, add) {
+    if (a.mode !== "detailed") return;
+    for (const k of ["c1a", "c1b"]) {
+      const n = panelSize(a, k);
+      if (n && n % 2 === 0) add.warn("Panels normally use an odd number of judges so a majority decision is possible.");
+    }
+  },
+  output(a) {
+    const L = [];
+    const deb = evts(a, e => e.panel), ie = evts(a, e => e.group === "ie");
+    const of = k => { const n = panelSize(a, k); return n ? "Panels of " + n + " judges" : "Judge panels"; };
+    const when = (k, round, other, list) => {
+      if (round === "other") return str(other) ? of(k) + " in " + names(list) + ": " + str(other) : "";
+      const r = PANEL_ROUNDS.find(o => o.v === round);
+      return r ? of(k) + " will be used " + r.out + " in " + names(list) + "." : "";
+    };
+    if (deb.length) { const t = when("c1a", a.c1a_round, a.c1a_other, deb); if (t) L.push(B.li({ text: t })); }
+    if (ie.length && a.c1b_prior === "yes") { const t = when("c1b", a.c1b_round, a.c1b_other, ie); if (t) L.push(B.li({ text: t })); }
+    if (ie.length && a.c1b_prior === "no")
+      L.push(B.li({ text: "Per the TFA Constitution (Requirement #19), we disclose that " + of("c1b").toLowerCase() + " will be used in the finals of all TFA individual events offered: " + names(ie) + "." }));
+    return L.length ? [B.ul(L)] : [];
+  }
+},
+/* ---------------------------------------------------------------- C2 */
+{
+  id: "C2", title: "Sweepstakes formula", level: "Required", step: "required", place: "disclosures/sweeps",
+  shownWhen: () => true,
+  help: "Describe how schools earn sweepstakes points (for example, points for advancing through elimination rounds or placing in finals), which events count, and how ties are broken.",
+  why: "IQT Manual, Requirements #20 and #25b (pp. 101–102): hosts must make the sweepstakes formula available in the invitation, or in information given to schools at the start of the tournament, and the formula is listed among the items to communicate on the invitation.",
+  fields: [
+    { id: "c2", type: "radio", label: "How will you communicate your sweepstakes formula to schools?", required: "Choose how you will communicate your sweepstakes formula.",
+      options: [
+        { v: "include", l: "Include the formula in this invitation (recommended)" },
+        { v: "tabroom", l: "It is listed on our Tabroom page" },
+        { v: "start", l: "I will give the formula to schools at the start of the tournament" },
+        { v: "none", l: "My tournament will not award sweepstakes", modes: D }
+      ] },
+    { id: "c2_formula", type: "textarea", rows: 5, label: "Enter your sweepstakes formula.", showIf: a => a.c2 === "include",
+      required: "Enter your sweepstakes formula." },
+    { id: "c2_tab", type: "text", label: "Which Tabroom tab or page is it listed under? (optional)", placeholder: "For example: the \"Sweepstakes\" page", showIf: a => a.c2 === "tabroom" },
+    { id: "c2_host_out", modes: D, type: "checkbox", label: "State that the host school(s) are not eligible for sweepstakes", showIf: a => a.c2 && a.c2 !== "none" }
+  ],
+  validate(a, add) {
+    if (a.mode === "required" && a.c2 === "none") add.block("Choose how you will communicate your sweepstakes formula.", "c2");
+    if (a.mode === "detailed" && a.c2 === "start")
+      add.warn("Requirement #25b lists the sweepstakes formula among items to communicate on the invitation, while #20 also allows giving it at the start of the tournament. Including it in the invitation is the safer choice.");
+  },
+  output(a) {
+    const out = this.outMain(a);
+    if (out.length && a.mode === "detailed" && a.c2_host_out && a.c2 !== "none")
+      out.push(B.p({ text: (hostNames(a).length ? joinList(hostNames(a)) : "The host school") + " " + (hostNames(a).length > 1 ? "are" : "is") + " not eligible for sweepstakes awards." }));
+    return out;
+  },
+  outMain(a) {
+    if (a.c2 === "include") return paras(a.c2_formula);
+    if (a.c2 === "tabroom") return [B.p({ text: "The sweepstakes formula is posted on this tournament’s Tabroom page" + (str(a.c2_tab) ? ", under " + str(a.c2_tab) : "") + "." })];
+    if (a.c2 === "start") return [B.p({ text: "The sweepstakes formula will be provided to all participating schools at the start of the tournament." })];
+    if (a.c2 === "none" && a.mode === "detailed") return [B.p({ text: "Sweepstakes awards will not be given at this tournament." })];
+    return [];
+  }
+},
+/* ---------------------------------------------------------------- C3 */
+{
+  id: "C3", title: "Power-matching method", level: "Required", step: "required", place: "disclosures/pairing",
+  shownWhen: a => hasEvt(a, e => e.panel),
+  help: "Power-matching pairs entries within win/loss brackets. High-high pairs the top entries in a bracket against each other; high-low pairs the top entries against the bottom entries.",
+  why: "IQT Manual, Requirements #25c; Debate Tabulation (Policy, Public Forum, Lincoln-Douglas) and World Schools Tabulation: tournaments should announce in their invitation which form of power-matching they will use (high-high or high-low within brackets).",
+  fields: a => {
+    const list = evts(a, e => e.panel);
+    const f = [];
+    if (list.length > 1) f.push({ id: "c3_split", type: "checkbox", label: "Use a different method for each event" });
+    const opts = [{ v: "High-high", l: "High-high" }, { v: "High-low", l: "High-low" }];
+    if (list.length > 1 && a.c3_split) {
+      list.forEach(e => f.push({ id: "c3_m_" + e.id, type: "radio", inline: true, label: e.name, options: opts, required: "Choose a power-matching method for " + e.name + "." }));
+    } else {
+      f.push({ id: "c3", type: "radio", inline: true, label: "Which power-matching method will you use in debate preliminary rounds?", options: opts, required: "Choose a power-matching method." });
+    }
+    return f;
+  },
+  validate(a, add) {
+    if (a.mode === "detailed")
+      add.note("Reminder: the last preliminary round must be power-matched; Policy, Public Forum, and Lincoln-Douglas need at least three preliminary rounds (Requirements #8); in World Schools, all rounds from round three onward must be power-matched.");
+  },
+  output(a) {
+    const list = evts(a, e => e.panel);
+    const split = list.length > 1 && a.c3_split;
+    const groups = {};
+    for (const e of list) { const m = split ? a["c3_m_" + e.id] : a.c3; if (m) (groups[m] = groups[m] || []).push(e); }
+    const L = Object.keys(groups).map(m => B.li({ text: names(groups[m]) + ": " + m + " power-matching within win/loss brackets will be used in preliminary rounds." }));
+    return L.length ? [B.ul(L)] : [];
+  }
+},
+/* ---------------------------------------------------------------- C4 */
+{
+  id: "C4", title: "Bracket breaking", level: "Required", step: "required", place: "disclosures/pairing",
+  shownWhen: a => hasEvt(a, e => e.panel),
+  help: "If your invitation does not say brackets will be broken, brackets will not be broken.",
+  why: "IQT Manual, Requirements #25d; Debate Tabulation, Elimination Brackets rule 3: brackets may be broken, at the tournament director’s discretion, only if the invitation says they will be. If it isn’t communicated, the default is not to break.",
+  fields: [
+    { id: "c4", type: "yesno", label: "If two entries from the same school would meet in an elimination round, will you break brackets to avoid it?", required: "Answer whether you will break brackets." },
+    { id: "c4_method", modes: D, type: "checkbox", label: "Describe the TFA method in the invitation (the lower-seeded entry is moved up by switching with the adjacent seed)", showIf: a => a.c4 === "yes" }
+  ],
+  output(a) {
+    if (a.c4 === "yes") {
+      let t = "Brackets will be broken when entries from the same school would meet in elimination rounds, at the tournament director’s discretion and according to TFA rules.";
+      if (a.mode === "detailed" && a.c4_method) t += " When a same-school conflict occurs, the lower-seeded entry is moved up by switching it with the adjacent seed.";
+      return [B.ul([B.li({ text: t })])];
+    }
+    if (a.c4 === "no") return [B.ul([B.li({ text: "Brackets will not be broken." })])];
+    return [];
+  }
+},
+/* ---------------------------------------------------------------- C5 */
+{
+  id: "C5", title: "Debate topics", level: "Required", step: "required", place: "disclosures/topics",
+  shownWhen: a => hasEvt(a, e => e.topic || e.ws),
+  help: "Use the official topic for the dates of your tournament. World Schools prepared motions are chosen from the list released by the World Schools Committee (released August 1 for IQTs).",
+  why: "IQT Manual, Requirements #25e (p. 102): debate topics must be communicated on the invitation. World Schools rules (Debate Events Overview): IQTs must offer at least one impromptu motion in preliminary rounds to award state qualification points, and prepared motions are chosen from the committee’s list.",
+  whyRequired: "IQT Manual, Requirements #25e (p. 102): debate topics must be communicated on the invitation.",
+  fields: a => {
+    const f = evts(a, e => e.topic).map(e => ({ id: "c5_" + e.id, type: "textarea", rows: 2, label: "What is the resolution for " + e.name + "?", required: "Enter the resolution for " + e.name + "." }));
+    if (hasEvt(a, e => e.ws)) {
+      if (a.mode === "required") {
+        f.push({ id: "c5_ws_text", type: "textarea", rows: 4, label: "World Schools Debate motions", help: "One motion per line, in round order.", required: "Enter your World Schools Debate motions." });
+      } else {
+        f.push({ id: "c5_ws_rounds", type: "table", label: "World Schools preliminary rounds", help: "Add one row for each preliminary round. Choose Impromptu for rounds whose motion is announced at the round.",
+          rowLabel: i => "Round " + (i + 1), addLabel: "Add round", minRows: 1,
+          columns: [
+            { key: "type", label: "Motion type", type: "select", options: [{ v: "Prepared", l: "Prepared" }, { v: "Impromptu", l: "Impromptu" }] },
+            { key: "motion", label: "Motion", type: "text", showIf: r => r.type !== "Impromptu", placeholder: "This House…" }
+          ] });
+        f.push({ id: "c5_ws_count", type: "computed", text: a => { const n = wsRounds(a).filter(r => r.type === "Impromptu").length; return "Preliminary rounds using an impromptu motion: " + n; } });
+        f.push({ id: "c5_ws_elim", type: "radio", label: "Will you hold more than one elimination round or go straight to finals?",
+          options: [{ v: "multi", l: "Multiple elimination rounds" }, { v: "straight", l: "Straight to finals" }] });
+        f.push({ id: "c5_ws_elim_imp", type: "checkgroup", inline: true, label: "Which elimination round(s) will use an impromptu motion?", showIf: a => a.c5_ws_elim === "multi",
+          options: ["Octafinals", "Quarterfinals", "Semifinals", "Finals"].map(x => ({ v: x, l: x })) });
+        f.push({ id: "c5_ws_final", type: "radio", inline: true, label: "Will the final use a prepared or an impromptu motion?", showIf: a => a.c5_ws_elim === "straight",
+          options: [{ v: "prepared", l: "Prepared" }, { v: "impromptu", l: "Impromptu" }] });
+      }
+    }
+    return f;
+  },
+  validate(a, add) {
+    if (a.mode !== "detailed" || !hasEvt(a, e => e.ws)) return;
+    const r = wsRounds(a);
+    if (!r.length || r.some(x => x.type !== "Impromptu" && isBlank(x.motion)) || r.some(x => isBlank(x.type)))
+      add.block("Complete every World Schools preliminary round: choose Prepared or Impromptu, and enter each prepared motion.", "c5_ws_rounds");
+    if (!r.some(x => x.type === "Impromptu"))
+      add.block("To award state qualification points, an IQT must offer at least one impromptu motion in preliminary rounds.", "c5_ws_rounds");
+    if (a.c5_ws_elim === "multi" && isBlank(a.c5_ws_elim_imp))
+      add.block("When you hold more than one World Schools elimination round, at least one elimination round must use an impromptu motion.", "c5_ws_elim_imp");
+  },
+  output(a) {
+    const out = [];
+    const L = evts(a, e => e.topic).filter(e => str(a["c5_" + e.id])).map(e => B.li(B.label(e.name, a["c5_" + e.id])));
+    if (L.length) out.push(B.ul(L));
+    if (hasEvt(a, e => e.ws)) {
+      if (a.mode === "required") {
+        const lines = str(a.c5_ws_text).split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+        if (lines.length) out.push(B.h4("World Schools Debate"), B.ul(lines.map(s => B.li({ text: s }))));
+      } else {
+        const r = wsRounds(a);
+        const body = r.map((x, i) => x.type === "Impromptu" ? ["Round " + (i + 1), "Impromptu motion (announced at the round)"]
+          : (str(x.motion) ? ["Round " + (i + 1), str(x.motion)] : null)).filter(Boolean);
+        if (body.length) out.push(B.h4("World Schools Debate"), B.table(["Round", "Motion"], body));
+        let elim = "";
+        if (a.c5_ws_elim === "multi") {
+          const imp = ["Octafinals", "Quarterfinals", "Semifinals", "Finals"].filter(x => (a.c5_ws_elim_imp || []).includes(x));
+          elim = "Multiple elimination rounds" + (imp.length ? "; impromptu motion in " + joinList(imp) : "") + ".";
+        } else if (a.c5_ws_elim === "straight") {
+          elim = a.c5_ws_final ? "Straight to finals, with " + (a.c5_ws_final === "impromptu" ? "an impromptu" : "a prepared") + " motion in the final." : "Straight to finals.";
+        }
+        if (elim) out.push(B.p(B.label("Elimination rounds", elim)));
+      }
+    }
+    return out;
+  }
+},
+/* ---------------------------------------------------------------- C6 */
+{
+  id: "C6", title: "Congressional docket", level: "Required", step: "required", place: "disclosures/congress",
+  shownWhen: a => hasEvt(a, e => e.congress),
+  help: "Use legislation from the official TFA docket posted at texasforensicassociation.com. Items will be debated in the order you list them here.",
+  why: "IQT Manual, Requirements #25f (p. 102); Congressional Debate rules 3.m (p. 76) and 4.e (p. 77); Congressional Debate Tabulation (p. 109): the invitation must include the docket, designate the legislation used in preliminary, semifinal, and/or final sessions, and specify the debate order.",
+  whyRequired: "IQT Manual, Requirements #25f (p. 102); Congressional Debate rules 4.e (p. 77): the invitation must include the docket and designate which pieces of legislation are used in preliminary, semifinal, and final sessions.",
+  fields: a => {
+    const f = [
+      { id: "c6_prelims", type: "number", label: "How many preliminary sessions will you hold?", min: 1, max: 12, rerender: true, required: "Enter how many preliminary sessions you will hold." },
+      { id: "c6_semis", type: "yesno", label: "Will you hold a semifinal session?", required: "Answer whether you will hold a semifinal session." }
+    ];
+    c6Sessions(a).forEach(s => f.push({
+      id: "c6_text." + s.key, type: "textarea", rows: 4, label: s.label + ": legislation docket",
+      help: "Type or paste the legislation for this round, one item per line, in debate order (for example: HB 101 – A Bill to …).",
+      required: "Enter the legislation docket for " + s.label + "." }));
+    return f;
+  },
+  validate(a, add) {
+    if (a.mode !== "detailed") return;
+    const ss = c6Sessions(a), seen = {}, orig = {};
+    for (const s of ss) for (const it of c6Items(a, s.key)) { const k = it.toLowerCase(); orig[k] = orig[k] || it; if (!(seen[k] || []).includes(s.label)) (seen[k] = seen[k] || []).push(s.label); }
+    for (const k in seen) if (seen[k].length > 1) add.warn("The same item appears in more than one session (" + joinList(seen[k]) + "): " + orig[k]);
+  },
+  output(a) {
+    const out = [];
+    for (const s of c6Sessions(a)) {
+      const items = c6Items(a, s.key);
+      if (items.length === 1) out.push(B.h4(s.label), B.p({ text: items[0] }));
+      else if (items.length) out.push(B.h4(s.label), B.ol(items.map(t => B.li({ text: t }))));
+    }
+    if (out.length && a.mode === "detailed") out.push(B.p({ text: "Items will be debated in the order listed." }));
+    return out;
+  }
+},
+/* ---------------------------------------------------------------- C7 */
+{
+  id: "C7", title: "Host-school students and elimination eligibility", level: "Required", step: "required", place: "disclosures/host",
+  shownWhen: () => true,
+  help: "If they will compete, the first draft of your invitation must say so. If it does not, your students cannot compete in elimination rounds.",
+  why: "IQT Manual, Requirements #18 (p. 101): all tournaments MUST state in the initial draft of the invitation that host-school students may compete and will be eligible for elimination rounds. Leaving it out bars the host’s students from elimination rounds.",
+  fields: a => [
+    { id: "c7", type: "radio", label: "Will students from your school (" + hostLabel(a) + ") compete in your tournament?", required: "Answer whether your students will compete.",
+      options: [{ v: "yes", l: "Yes, our students will compete and will be eligible for elimination rounds" }, { v: "no", l: "No, our students will not compete" }] },
+    { id: "c7_banner", type: "note", kind: "warn", showIf: a => a.c7 === "yes",
+      text: "This statement must be in the first draft of your invitation. Check with your Region Representative if an earlier draft was already posted without it." },
+    { id: "c7_ack", modes: D, type: "checkgroup", label: "Check each box to confirm:", showIf: a => a.c7 === "yes", options: C7_ACKS.map((t, i) => ({ v: "k" + i, l: t })) },
+    { id: "c7_safeguards", modes: D, type: "checkbox", label: "Include these safeguards in the invitation", default: true, showIf: a => a.c7 === "yes" }
+  ],
+  validate(a, add) {
+    if (a.mode === "detailed" && a.c7 === "yes" && C7_ACKS.some((t, i) => !(a.c7_ack || []).includes("k" + i)))
+      add.block("Check every host-school acknowledgment.", "c7_ack");
+  },
+  output(a) {
+    if (a.c7 !== "yes") return [];
+    const h = hostLabel(a) === "your school" ? "the host school" : hostLabel(a);
+    const out = [B.p({ text: "Students from " + h + " will compete in this tournament and are eligible to compete in elimination rounds." })];
+    if (a.mode === "detailed" && a.c7_safeguards !== false) {
+      out.push(B.ul([
+        "Tab room staff not affiliated with " + h + " will make decisions about " + h + " competitors in elimination rounds, such as speaker order and judge placement.",
+        "A second tab room person from a school not affiliated with " + h + " will double-check pairings, sectioning, and judge placement.",
+        "Any protest involving " + h + " students will be heard by tab room staff not affiliated with " + h + ".",
+        "No more than 50% of the competitors in any event at the start of round 1 will be from " + h + "."
+      ].map(t => B.li({ text: t }))));
+    }
+    return out;
+  }
+},
+/* ---------------------------------------------------------------- D1 */
+{
+  id: "D1", title: "Congress per-item debate limit", level: "Conditional", step: "conditional", place: "disclosures/congress",
+  shownWhen: a => hasEvt(a, e => e.congress),
+  help: "This optional rule limits debate on each item to one-third of a session’s floor time. If no action has been taken by then, an immediate vote is held. If you do not declare it, there is no per-item limit.",
+  why: "Congressional Debate rules 3.l (p. 76): all TFA tournaments must declare in their invitations if this rule is used. If it is not declared, there is no per-item limit on floor debate.",
+  fields: [
+    { id: "d1", type: "yesno", label: "Will you use the optional limit on floor debate time for each item of legislation?", default: "no" },
+    { id: "d1_state_none", modes: D, type: "checkbox", label: "State that there is no per-item limit", showIf: a => a.d1 === "no" }
+  ],
+  output(a) {
+    if (a.d1 === "yes") return [B.ul([B.li(B.label("Per-item debate limit", "floor debate on each item will last no more than one-third of a session’s floor time. If action has not been taken by then, an immediate vote will be taken."))])];
+    if (a.d1 === "no" && a.mode === "detailed" && a.d1_state_none) return [B.ul([B.li({ text: "There is no per-item limit on floor debate." })])];
+    return [];
+  }
+},
+/* ---------------------------------------------------------------- D2 */
+{
+  id: "D2", title: "Presiding Officer elections", level: "Conditional", step: "conditional", place: "disclosures/congress",
+  shownWhen: a => hasEvt(a, e => e.congress),
+  help: "If students may run, the invitation must say so. Students declare their intent on the tournament entry form or with the tournament director by the due date.",
+  why: "Congressional Debate Tabulation, Presiding Officers (pp. 108–109): tournament directors decide whether students may run for PO in all sessions and shall indicate this opportunity in the invitation. Students declare their intention on the entry form or with the tournament director by the due date.",
+  fields: [
+    { id: "d2", type: "yesno", label: "Will students be allowed to run for Presiding Officer in all sessions?", default: "no" },
+    { id: "d2_method", modes: D, type: "radio", label: "How should students declare their intent to run?", showIf: a => a.d2 === "yes",
+      options: [{ v: "form", l: "On the tournament entry form" }, { v: "director", l: "With the tournament director" }, { v: "either", l: "Either" }] },
+    { id: "d2_deadline", modes: D, type: "text", label: "What is the declaration deadline?", help: "Starts as your entry deadline from A1. Change it if needed.", showIf: a => a.d2 === "yes" }
+  ],
+  validate(a, add) {
+    if (a.mode === "detailed" && a.d2 === "yes" && isBlank(a.d2_method)) add.block("Choose how students declare their intent to run for Presiding Officer.", "d2_method");
+  },
+  output(a) {
+    if (a.d2 !== "yes") return [];
+    let t = "Students may run for Presiding Officer in all sessions.";
+    if (a.mode === "detailed" && a.d2_method) {
+      const how = { form: "on the tournament entry form", director: "with the tournament director", either: "on the entry form or with the tournament director" }[a.d2_method];
+      const dl = str(a.d2_deadline) || str(a.a1_entry_deadline);
+      t += " Students wishing to run must declare their intention " + how + (dl ? " by " + dl : "") + ".";
+    }
+    return [B.ul([B.li({ text: t })])];
+  }
+},
+/* ---------------------------------------------------------------- E1 */
+{
+  id: "E1", title: "Judging by disclosure", level: "Optional", step: "format", modes: D, place: "disclosures/pairing",
+  shownWhen: a => hasEvt(a, e => e.topic),
+  help: "TFA leaves disclosure up to each competitor. Tournament directors may add this rule for their tournaments.",
+  why: "IQT Manual, Hosting an IQT, item 12 (p. 98): tournament directors may stipulate that judges may not base their decisions on disclosure of cases or the lack of it. Debate Events Overview, Disclosure Rules: disclosure is at the discretion of individual competitors.",
+  fields: [{ id: "e1", type: "yesno", label: "Do you want to tell judges they may not base their decisions on whether debaters disclosed their cases?", default: "no" }],
+  output(a) { return a.e1 === "yes" ? [B.ul([B.li({ text: "Judges may not base their decisions on disclosure of cases or the lack of disclosure." })])] : []; }
+},
+/* ---------------------------------------------------------------- E2 */
+{
+  id: "E2", title: "Cross-entries and event format", level: "Optional", step: "format", modes: D, place: "disclosures/format",
+  shownWhen: a => hasEvt(a, e => e.group === "debate"),
+  help: "TFA lets tournament directors limit cross-entries and run debate and Congress in any pattern they choose.",
+  why: "Debate Events Overview (general debate rules) and Congressional Debate rules: debate may be run in any pattern at the tournament director’s discretion, and the director may limit cross-entries. Requirements #8: at least three preliminary rounds in Policy, Public Forum, and Lincoln-Douglas.",
+  fields: a => [
+    { id: "e2_cross", type: "radio", label: "Will you allow students to enter more than one event (cross-entries)?",
+      options: [{ v: "open", l: "Cross-entries allowed with no limits" }, { v: "limits", l: "Cross-entries allowed with limits" }, { v: "none", l: "No cross-entries" }] },
+    { id: "e2_limits", type: "textarea", rows: 2, label: "Describe your cross-entry limits.", showIf: a => a.e2_cross === "limits" },
+    ...evts(a, e => e.prelims).map(e => ({ id: "e2_r_" + e.id, type: "number", min: 1, label: "Preliminary rounds: " + e.name, half: true })),
+    { id: "e2_breaks", type: "textarea", rows: 2, label: "How will debate entries advance to elimination rounds? (optional)",
+      help: "For example: \"We will break to the highest level of guaranteed TFA points\" or \"All 2-1 records or better advance to a partial octafinal round.\"" },
+    { id: "e2_notes", type: "textarea", rows: 3, label: "Is there anything else schools should know about how your debate or Congress events will run?",
+      help: "For example: prep time, lag-powered rounds, which days debate runs, or Congress session length." }
+  ],
+  validate(a, add) {
+    for (const e of evts(a, e => e.minPrelims)) {
+      const n = parseInt(a["e2_r_" + e.id], 10);
+      if (!isNaN(n) && n < e.minPrelims) { add.warn("TFA requires at least three preliminary rounds in Policy, Public Forum, and Lincoln-Douglas (Requirements #8)."); break; }
+    }
+  },
+  output(a) {
+    const L = [];
+    const c = { open: "Allowed with no limits", limits: "Allowed with limits", none: "Not allowed" }[a.e2_cross];
+    if (c) {
+      const runs = B.label("Cross-entries", c);
+      if (a.e2_cross === "limits" && str(a.e2_limits)) runs.push({ text: ": " }, ...textRuns(a.e2_limits));
+      L.push(B.li(runs));
+    }
+    const pr = evts(a, e => e.prelims).filter(e => str(a["e2_r_" + e.id])).map(e => B.li(B.label(e.name, a["e2_r_" + e.id])));
+    if (pr.length) L.push({ runs: [{ text: "Preliminary rounds:", b: true }], children: B.ul(pr) });
+    if (str(a.e2_breaks)) L.push(B.li(B.label("Elimination rounds", a.e2_breaks)));
+    if (str(a.e2_notes)) L.push(B.li(B.label("Format notes", a.e2_notes)));
+    return L.length ? [B.ul(L)] : [];
+  }
+},
+/* ---------------------------------------------------------------- E12 (added from sample invitations) */
+{
+  id: "E12", title: "Individual events format", level: "Optional", step: "format", modes: D, place: "disclosures/ieformat",
+  shownWhen: a => hasEvt(a, e => e.group === "ie"),
+  help: "Schools plan cross-entries and travel around your IE format, so strong invitations spell it out.",
+  why: "IQT Manual, Requirements #5 (p. 99): individual events, Duet Acting, and Duo Interpretation need at least one preliminary round followed by semifinals and finals; with 24 or fewer entries, two or more preliminary rounds may be followed by finals. Requirements #7: no more than eight contestants in a section.",
+  fields: a => [
+    { id: "e12_prelims", type: "number", min: 1, label: "Preliminary rounds in individual events", half: true },
+    { id: "e12_elims", type: "textarea", rows: 2, label: "Elimination rounds (optional)", placeholder: "For example: semifinals and finals; quarterfinals added in events with 61 or more entries." },
+    { id: "e12_patterns", type: "textarea", rows: 3, label: "Cross-entry patterns (optional)",
+      placeholder: "For example: Pattern A: DI, POI, Duo, Info, USX, IX. Pattern B: HI, OO, Duet. Students may enter one event per pattern." },
+    { id: "e12_extemp", type: "textarea", rows: 4, label: "Extemp topic areas by round (optional)", showIf: a => hasEvt(a, e => ["usx", "ix"].includes(e.id)),
+      placeholder: "For example:\nUSX Round 1: Economy\nIX Round 1: Europe" }
+  ],
+  output(a) {
+    const out = [], L = [];
+    if (str(a.e12_prelims)) L.push(B.li(B.label("Preliminary rounds", a.e12_prelims)));
+    if (str(a.e12_elims)) L.push(B.li(B.label("Elimination rounds", a.e12_elims)));
+    if (str(a.e12_patterns)) L.push(B.li(B.label("Cross-entry patterns", a.e12_patterns)));
+    if (L.length) out.push(B.ul(L));
+    const ex = hasEvt(a, e => ["usx", "ix"].includes(e.id)) ? str(a.e12_extemp).split(/\r?\n/).map(s => s.trim()).filter(Boolean) : [];
+    if (ex.length) out.push(B.h4("Extemp Topic Areas"), B.ul(ex.map(s => B.li(textRuns(s)))));
+    return out;
+  }
+},
+/* ---------------------------------------------------------------- E4 */
+{
+  id: "E4", title: "Schedule", level: "Optional", step: "money", modes: D, place: "schedule",
+  shownWhen: () => true,
+  help: "Add one row for each item. Round start times should follow TFA time limits.",
+  why: "Not a disclosure rule. TFA rules say no round may begin after midnight on Friday or Saturday (Requirements #17, p. 101), and a tournament held over three calendar days may hold at most 5 rounds in any event on any day (Requirements #26, p. 102).",
+  fields: a => [
+    { id: "e4", type: "table", label: "Add your tournament schedule: check-in, each round, announcements, and awards.", rowLabel: i => "Row " + (i + 1), addLabel: "Add row", minRows: 1,
+      emptyNote: tournamentDays(a).length ? "" : "Enter your tournament dates in step 1 to choose days.",
+      columns: [
+        { key: "day", label: "Day", type: "select", options: () => tournamentDays(a).map(d => ({ v: d, l: dayLabel(d) })) },
+        { key: "time", label: "Time", type: "time" },
+        { key: "activity", label: "Activity", type: "text" },
+        { key: "event", label: "Event (optional)", type: "select", options: () => evts(a).map(e => ({ v: e.id, l: e.name })) }
+      ] }
+  ],
+  validate(a, add) {
+    const days = tournamentDays(a);
+    const live = scheduleRows(a);
+    const rounds = live.filter(r => r.ev && r.day && CONFIG.roundPattern.test(r.activity));
+    if (rounds.some(r => { const wd = parseISO(r.day).getUTCDay(); const h = parseInt(r.time, 10); return (wd === 6 || wd === 0) && !isNaN(h) && h < 6; }))
+      add.warn("TFA rules say no round may begin after midnight on Friday or Saturday. A tournament in violation may lose its qualifying status the following year.");
+    if (days.length >= CONFIG.maxRoundsMinDays) {
+      const count = {};
+      rounds.forEach(r => { const k = r.day + "|" + r.ev.id; count[k] = (count[k] || 0) + 1; });
+      for (const k in count) if (count[k] > CONFIG.maxRoundsPerDay) {
+        const [d, id] = k.split("|");
+        add.warn("More than 5 rounds of " + CONFIG.events.find(e => e.id === id).name + " are scheduled on " + dayLabel(d) + ". A tournament held over three calendar days may hold at most 5 rounds in any event on any day (Requirements #26).");
+      }
+    }
+  },
+  output(a) {
+    const r = scheduleRows(a).filter(x => x.activity);
+    if (!r.length) return [];
+    r.sort((x, y) => (x.day || "9999").localeCompare(y.day || "9999") || (x.time || "99").localeCompare(y.time || "99"));
+    return [B.table(["Day", "Time", "Activity"], r.map(x => [x.day ? dayLabel(x.day) : "", formatTime(x.time), x.activity + (x.ev ? " (" + x.ev.name + ")" : "")]))];
+  }
+},
+/* ---------------------------------------------------------------- E5 */
+{
+  id: "E5", title: "Entry fees and payment", level: "Optional", step: "money", modes: D, place: "fees",
+  shownWhen: () => true,
+  help: "Fee fields appear only for the event types you checked in B1.",
+  why: "Not a TFA disclosure rule. Included because schools expect fee information.",
+  fields: a => [
+    { id: "e5_split", type: "checkbox", label: "Set a separate fee for each event (for example, when World Schools costs more)" },
+    ...(a.e5_split ? evts(a).map(e => ({ id: "e5_f_" + e.id, type: "text", label: e.name + " fee", placeholder: "For example: 30 per entry", half: true })) : [
+      { id: "e5_debate", type: "text", label: "Debate entry fee", inputmode: "decimal", half: true, showIf: a => hasEvt(a, e => e.fee === "debate") },
+      { id: "e5_debate_unit", type: "select", label: "Debate fee is charged", half: true, showIf: a => hasEvt(a, e => e.fee === "debate"),
+        options: [{ v: "team", l: "per team" }, { v: "entry", l: "per entry" }] },
+      { id: "e5_ie", type: "text", label: "Individual event entry fee (per entry)", inputmode: "decimal", half: true, showIf: a => hasEvt(a, e => e.fee === "ie") },
+      { id: "e5_cong", type: "text", label: "Congress entry fee (per entry)", inputmode: "decimal", half: true, showIf: a => hasEvt(a, e => e.fee === "congress") }]),
+    { id: "e5_other", type: "text", label: "Fees for other events or divisions (optional)", showIf: a => !!str(a.b1_other), placeholder: "For example: Novice LD $25; Prose and Poetry $20" },
+    { id: "e5_school", type: "text", label: "School fee", inputmode: "decimal", half: true },
+    { id: "e5_late", type: "text", label: "Late fee", inputmode: "decimal", half: true },
+    { id: "e5_drop", type: "text", label: "Drop fee", inputmode: "decimal", half: true },
+    { id: "e5_discounts", type: "text", label: "Discounts (optional)", half: true },
+    { id: "e5_pay", type: "textarea", rows: 2, label: "How and to whom should schools pay?", help: "Links you paste here (for example, an online payment page) become clickable." },
+    { id: "e5_latepay", type: "textarea", rows: 2, label: "Late-payment policy (optional)", placeholder: "For example: invoices not paid by October 31 incur a $50 per week late fee." },
+    { id: "e5_caps", type: "textarea", rows: 3, label: "Entry caps and waitlist policy (optional)", placeholder: "For example: no more than 6 LD entries per school until December 15; extra entries go on the waitlist." }
+  ],
+  validate(a, add) {
+    const anyFee = e5Lines(a).some(([k]) => !E5_NOT_FEES.includes(k));
+    if (anyFee && !str(a.e5_pay)) add.warn("You entered a fee but no payment instructions.");
+  },
+  output(a) { const L = e5Lines(a).map(([k, v]) => B.li(B.label(k, v))); return L.length ? [B.ul(L)] : []; }
+},
+/* ---------------------------------------------------------------- E3 */
+{
+  id: "E3", title: "Judging obligations and fees", level: "Optional", step: "money", modes: D, place: "judging",
+  shownWhen: () => true,
+  help: "Judges must have already graduated from high school. Fees collected for judging must be used to pay judges and not as tournament profit.",
+  why: "IQT Manual, Requirements #13 and #15 (p. 100): judges must have graduated from high school, and judging fees must be used for paying judges, not as profit.",
+  fields: [
+    { id: "e3_obl", type: "textarea", rows: 3, label: "What are your judge obligations for schools?" },
+    { id: "e3_hired", type: "yesno", label: "Will you offer hired judges?" },
+    { id: "e3_hired_fee", type: "text", label: "Hired judge fee", half: true, showIf: a => a.e3_hired === "yes" },
+    { id: "e3_hired_how", type: "text", label: "How schools request hired judges", half: true, showIf: a => a.e3_hired === "yes" },
+    { id: "e3_uncovered", type: "text", label: "Fee for entries that are not covered by a judge (leave blank if none)" },
+    { id: "e3_reg", type: "text", label: "When must schools register their judges?" },
+    { id: "e3_expect", type: "textarea", rows: 3, label: "Judge expectations (optional)",
+      help: "For example: every judge needs a Tabroom account and paradigm; judges stay one round past their last competitor's elimination; student judges do not count." },
+    { id: "e3_noshow", type: "text", label: "Missed-round (no-show) fine, if any", placeholder: "For example: $25 per missed round" },
+    { id: "e3_hire_link", type: "text", label: "Link for people who want to be hired as judges (optional)", placeholder: "https://…" },
+    { id: "e3_grad", type: "checkbox", label: "Include “All judges must have already graduated from high school.”", default: true },
+    { id: "e3_ack", type: "checkbox", label: "Fees collected for judging will be used to pay judges and not as tournament profit.", showIf: a => e3HasFee(a),
+      required: "Check the judging-fee acknowledgment." }
+  ],
+  output(a) {
+    const L = [];
+    if (str(a.e3_obl)) L.push(B.li(B.label("Judge obligations", a.e3_obl)));
+    if (a.e3_hired === "yes") {
+      const t = [money(a.e3_hired_fee), str(a.e3_hired_how)].filter(Boolean).join("; ");
+      L.push(B.li(B.label("Hired judges", t || "Available")));
+    } else if (a.e3_hired === "no") L.push(B.li(B.label("Hired judges", "Not available")));
+    if (str(a.e3_uncovered)) L.push(B.li(B.label("Fee for uncovered entries", money(a.e3_uncovered))));
+    if (str(a.e3_reg)) L.push(B.li(B.label("Judge registration", a.e3_reg)));
+    if (str(a.e3_expect)) L.push(B.li(B.label("Judge expectations", a.e3_expect)));
+    if (str(a.e3_noshow)) L.push(B.li(B.label("Missed-round fine", money(a.e3_noshow))));
+    if (str(a.e3_hire_link)) L.push(B.li(B.label("Want to be hired as a judge?", a.e3_hire_link)));
+    if (a.e3_grad !== false) L.push(B.li({ text: "All judges must have already graduated from high school." }));
+    return L.length ? [B.ul(L)] : [];
+  }
+},
+/* ---------------------------------------------------------------- E6 */
+{
+  id: "E6", title: "Awards and qualification points", level: "Optional", step: "money", modes: D, place: "awards",
+  shownWhen: () => true,
+  help: "TFA state qualification points are awarded only when minimum school and entry numbers are met.",
+  why: "IQT Manual, Qualifying Numbers 1–2 (p. 98): at least ten participating schools are required to award qualification points, and minimum entries apply in each event (Policy 10 teams, Public Forum 10 teams, Lincoln-Douglas 10 entries, Congress 10 entries, World Schools 6, all individual events including Duo and Duet 10). Points follow the current Qualifying Point Schedule on the TFA website.",
+  fields: [
+    { id: "e6_awards", type: "textarea", rows: 3, label: "What awards will you give (for example, top finishers in each event, speaker awards, sweepstakes awards)?" },
+    { id: "e6_qual", type: "checkbox", label: "Include a statement about TFA qualification points", default: true },
+    { id: "e6_min", type: "checkbox", label: "List the minimum entry numbers for my events", showIf: a => a.e6_qual !== false }
+  ],
+  output(a) {
+    const out = [];
+    if (str(a.e6_awards)) out.push(B.p(B.label("Awards", a.e6_awards)));
+    if (a.e6_qual !== false) {
+      out.push(B.p({ text: "This is a TFA Invitational Qualifying Tournament. Qualification points will be awarded according to the current TFA Qualifying Point Schedule at " },
+        { text: "texasforensicassociation.com", href: CONFIG.tfaUrl },
+        { text: ", only if at least ten schools participate and each event meets its minimum entry number." }));
+      if (a.e6_min) {
+        const L = evts(a).map(e => B.li(B.label(e.name, e.minEntries)));
+        if (L.length) out.push(B.p({ text: "Minimum entries:", b: true }), B.ul(L));
+      }
+    }
+    return out;
+  }
+},
+/* ---------------------------------------------------------------- E7 */
+{
+  id: "E7", title: "Tabulation and ballots", level: "Optional", step: "logistics", modes: D, place: "logistics",
+  shownWhen: () => true,
+  help: "TFA/AFA ballots should be used when available.",
+  why: "IQT Manual, Requirements #4 (p. 99): TFA/AFA ballots should be used as available. If a tournament uses paper ballots, it must keep a record of every judge’s name in each room and give it to the regional representative within five school days after the tournament.",
+  fields: [
+    { id: "e7_soft", type: "radio", inline: true, label: "What tabulation software will you use?", default: "tabroom",
+      options: [{ v: "tabroom", l: "Tabroom.com" }, { v: "other", l: "Other" }] },
+    { id: "e7_soft_other", type: "text", label: "Other software", showIf: a => a.e7_soft === "other" },
+    { id: "e7_ballots", type: "radio", inline: true, label: "Will you use electronic ballots, paper ballots, or both?",
+      options: [{ v: "electronic", l: "Electronic" }, { v: "paper", l: "Paper" }, { v: "both", l: "Both" }] },
+    { id: "e7_note", type: "note", kind: "note", showIf: a => ["paper", "both"].includes(a.e7_ballots),
+      text: "Reminder (not printed): with paper ballots you must keep a record of the first and last name of every judge in each room and give it to your regional representative within five school days after the tournament (Requirements #4a)." }
+  ],
+  output(a) {
+    const soft = a.e7_soft === "other" ? str(a.e7_soft_other) : (a.e7_soft === "tabroom" ? "Tabroom.com" : "");
+    const parts = [];
+    if (soft) parts.push({ text: "Tabulation: ", b: true }, { text: soft + "." });
+    if (a.e7_ballots) parts.push({ text: (parts.length ? " " : "") }, { text: "Ballots: ", b: true }, { text: { electronic: "electronic", paper: "paper", both: "electronic and paper" }[a.e7_ballots] + "." });
+    return parts.length ? [B.ul([B.li(parts)])] : [];
+  }
+},
+/* ---------------------------------------------------------------- E8 */
+{
+  id: "E8", title: "Food, parking, lodging, and local information", level: "Optional", step: "logistics", modes: D, place: "logistics",
+  shownWhen: () => true,
+  help: "Leave blank any item that does not apply.",
+  why: "Not a TFA disclosure rule.",
+  fields: [
+    { id: "e8_food", type: "textarea", rows: 2, label: "Food and concessions" },
+    { id: "e8_parking", type: "textarea", rows: 2, label: "Parking and arrival instructions" },
+    { id: "e8_lodging", type: "textarea", rows: 2, label: "Lodging suggestions or hotel block" },
+    { id: "e8_tech", type: "textarea", rows: 2, label: "Technology or virtual-round instructions" },
+    { id: "e8_weather", type: "textarea", rows: 2, label: "Weather or emergency policy" }
+  ],
+  output(a) {
+    const L = [["Food", a.e8_food], ["Parking", a.e8_parking], ["Lodging", a.e8_lodging], ["Technology", a.e8_tech], ["Weather or emergency policy", a.e8_weather]]
+      .filter(([, v]) => str(v)).map(([k, v]) => B.li(B.label(k, v)));
+    return L.length ? [B.ul(L)] : [];
+  }
+},
+/* ---------------------------------------------------------------- E13 (added from sample invitations) */
+{
+  id: "E13", title: "Entry eligibility and tournament policies", level: "Optional", step: "logistics", modes: D, place: "policies",
+  shownWhen: () => true,
+  help: "Most strong invitations state who may enter, who must supervise students, and what happens when a competitor is late.",
+  why: "Affiliation statement: IQT Manual, Requirements #14 (p. 100): Texas students at TFA tournaments must be affiliated with and represent the schools they attend (exceptions for NSDA national team and TFA state team members, who cannot earn qualification points while competing for those teams). The other items are host policies, not TFA rules.",
+  fields: [
+    { id: "e13_std", type: "checkgroup", label: "Standard statements to include:", options: [
+      { v: "affil", l: "Texas students must be affiliated with and represent the school they attend (TFA Requirements #14), so independent (maverick) entries from Texas schools are not accepted." },
+      { v: "adult", l: "Every school must have a school employee, or an adult the school has authorized in writing, available at the tournament until all of its students finish competing." }] },
+    { id: "e13_indep", type: "textarea", rows: 2, label: "Policy for out-of-state or independent entries (optional)" },
+    { id: "e13_novice", type: "text", label: "Definition of a novice (optional)", placeholder: "For example: a competitor in their first year of competition" },
+    { id: "e13_ms", type: "text", label: "Middle school or junior high entries (optional)", placeholder: "For example: welcome, but not eligible for TFA points" },
+    { id: "e13_forfeit", type: "textarea", rows: 2, label: "Late-arrival and forfeit policy (optional)", placeholder: "For example: judges wait 15 minutes in debate before recording a forfeit." },
+    { id: "e13_campus", type: "textarea", rows: 2, label: "Campus and conduct rules (optional)", placeholder: "For example: leave rooms as you found them; no food in competition rooms." }
+  ],
+  output(a) {
+    const std = {
+      affil: "Texas students must be affiliated with and represent the school they attend (TFA Requirements #14). Independent (maverick) entries from Texas schools will not be accepted.",
+      adult: "Every school must have a school employee, or an adult the school has authorized in writing, available at the tournament until all of its students have finished competing."
+    };
+    const L = ["affil", "adult"].filter(k => (a.e13_std || []).includes(k)).map(k => B.li({ text: std[k] }));
+    [["Independent and out-of-state entries", a.e13_indep], ["Novice definition", a.e13_novice], ["Middle school entries", a.e13_ms],
+     ["Late arrivals and forfeits", a.e13_forfeit], ["Campus and conduct", a.e13_campus]]
+      .forEach(([k, v]) => { if (str(v)) L.push(B.li(B.label(k, v))); });
+    return L.length ? [B.ul(L)] : [];
+  }
+},
+/* ---------------------------------------------------------------- E9 */
+{
+  id: "E9", title: "Contacts", level: "Required", step: "logistics", modes: D, place: "contact",
+  shownWhen: () => true,
+  help: "Schools will use this to ask questions, so double-check the email address and phone number.",
+  why: "Not a TFA disclosure rule. For IQTs, the tournament director must be a regular member of the host school’s faculty (Hosting item 7, p. 97).",
+  fields: [
+    { id: "e9_name", type: "text", label: "Tournament director’s name", required: "Enter the tournament director’s name.", autocomplete: "name" },
+    { id: "e9_email", type: "email", label: "Tournament director’s email", required: "Enter the tournament director’s email.", half: true, autocomplete: "email" },
+    { id: "e9_phone", type: "tel", label: "Tournament director’s phone", half: true, autocomplete: "tel" },
+    { id: "e9_more", type: "table", label: "Additional contacts (optional)", rowLabel: i => "Contact " + (i + 1), addLabel: "Add contact", minRows: 0,
+      columns: [{ key: "title", label: "Title", type: "text" }, { key: "name", label: "Name", type: "text" }, { key: "email", label: "Email", type: "email" }, { key: "phone", label: "Phone", type: "tel" }] }
+  ],
+  validate(a, add) {
+    add.note("Reminder: the tournament director for an IQT must be a regular member of the host school’s faculty (Hosting item 7).");
+    const emails = [a.e9_email, ...rows(a, "e9_more").map(r => r.email)].map(str).filter(Boolean);
+    if (emails.some(e => !isEmail(e))) add.warn("An email address is not formatted like an email address.");
+  },
+  output(a) {
+    const person = (name, email, phone) => {
+      const r = [{ text: str(name) }];
+      if (str(email)) r.push({ text: ", " }, isEmail(email) ? { text: str(email), href: "mailto:" + str(email) } : { text: str(email) });
+      if (str(phone)) r.push({ text: ", " + str(phone) });
+      return r;
+    };
+    const L = [];
+    if (str(a.e9_name) || str(a.e9_email)) L.push(B.li([{ text: "Tournament Director: ", b: true }, ...person(a.e9_name, a.e9_email, a.e9_phone)]));
+    rows(a, "e9_more").forEach(r => { if (str(r.name) || str(r.email) || str(r.phone)) L.push(B.li([{ text: (str(r.title) || "Contact") + ": ", b: true }, ...person(r.name, r.email, r.phone)])); });
+    return L.length ? [B.ul(L)] : [];
+  }
+},
+/* ---------------------------------------------------------------- E10 */
+{
+  id: "E10", title: "Additional notes and standard statements", level: "Optional", step: "logistics", modes: D, place: "additional",
+  shownWhen: () => true,
+  help: "Anything you type here is printed as written.",
+  why: "Videotaping statement: IQT Manual, Requirements #10 (p. 100). The Code statement reflects the TFA Code of Professional Standards and Code of Conduct.",
+  fields: [
+    { id: "e10_notes", type: "textarea", rows: 4, label: "Additional notes for schools" },
+    { id: "e10_std", type: "checkgroup", label: "Check any standard statements you want to include:", options: [
+      { v: "code", l: "All participants are expected to follow the TFA Code of Conduct and Code of Professional Standards." },
+      { v: "video", l: "Videotaping of rounds is not allowed; audio recordings may be used only to verify that students accurately represent the material they read during debates." }] }
+  ],
+  output(a) {
+    const out = paras(a.e10_notes);
+    const std = { code: "All participants are expected to follow the TFA Code of Conduct and Code of Professional Standards.",
+      video: "Videotaping of rounds is not allowed; audio recordings may be used only to verify that students accurately represent the material they read during debates." };
+    const L = ["code", "video"].filter(k => (a.e10_std || []).includes(k)).map(k => B.li({ text: std[k] }));
+    if (L.length) out.push(B.ul(L));
+    return out;
+  }
+}
+];
+
+/* C7 acknowledgments (detailed mode), from IQT Manual Requirements #18. */
+var C7_ACKS = [
+  "Tab room staff not affiliated with our school will make decisions about our competitors in elimination rounds (such as speaker order and judge placement).",
+  "A second tab room person from a school not affiliated with ours will double-check pairings, sectioning, and judge placement.",
+  "Any protest involving our students will be heard by tab room staff not affiliated with our school (ideally three coaches from other schools).",
+  "No more than 50% of the competitors in any event at the start of round 1 will be from our school, and at least two schools will compete in each event."
+];
+
+/* Output sections, in invitation order ("General output rules" in the spec). */
+const SECTIONS = [
+  { id: "welcome", title: "" },   // letter and updates: printed under the tournament name, no section heading
+  { id: "info", title: "Tournament Information" },
+  { id: "events", title: "Events Offered" },
+  { id: "schedule", title: "Schedule" },
+  { id: "fees", title: "Entries and Fees" },
+  { id: "judging", title: "Judging" },
+  { id: "awards", title: "Awards and Qualification" },
+  { id: "disclosures", title: { required: "TFA Required Disclosures", detailed: "Tournament Format and TFA Required Disclosures" }, subs: [
+    { id: "panels", title: "Judge Panels" },
+    { id: "sweeps", title: "Sweepstakes" },
+    { id: "pairing", title: "Power-Matching and Brackets" },
+    { id: "topics", title: "Debate Topics" },
+    { id: "congress", title: "Congressional Debate Docket" },
+    { id: "host", title: "Host-School Students" },
+    { id: "format", title: "Cross-Entries and Event Format" },
+    { id: "ieformat", title: "Individual Events Format" }
+  ] },
+  { id: "logistics", title: "Logistics" },
+  { id: "policies", title: "Eligibility and Policies" },
+  { id: "contact", title: "Contact" },
+  { id: "additional", title: "Additional Information" }
+];
+
+/* Form steps. A step is hidden when none of its questions is visible. */
+const STEPS = [
+  { id: "basics", title: "Tournament basics" },
+  { id: "welcome", title: "Welcome letter", modes: D },
+  { id: "events", title: "Events" },
+  { id: "required", title: "Required disclosures" },
+  { id: "conditional", title: "Congress options" },
+  { id: "format", title: "Event details", modes: D },
+  { id: "money", title: "Schedule, fees, judging, awards", modes: D },
+  { id: "logistics", title: "Logistics, policies, contact", modes: D },
+  { id: "review", title: "Review and export" }
+];
+
+/* ============================== END OF CONFIGURATION ============================== */
+
+/* ---------- rule helper functions (referenced from RULES) ---------- */
+function panelSize(a, k) {
+  const answered = k === "c1a" ? !!a.c1a_round : !!a.c1b_prior;
+  if (a.mode !== "detailed" || !answered) return 0;
+  const s = a[k + "_size"];
+  if (s === "other") { const n = parseInt(a[k + "_size_other"], 10); return n > 0 ? n : 0; }
+  return parseInt(s, 10) || 0;
+}
+function e3HasFee(a) { return (a.e3_hired === "yes" && str(a.e3_hired_fee)) || str(a.e3_uncovered) || str(a.e3_noshow); }
+function e5Lines(a) {
+  const L = [];
+  if (a.e5_split) {
+    evts(a).forEach(e => { if (str(a["e5_f_" + e.id])) L.push([e.name, money(a["e5_f_" + e.id])]); });
+  } else {
+    if (hasEvt(a, e => e.fee === "debate") && str(a.e5_debate)) L.push(["Debate", money(a.e5_debate) + (a.e5_debate_unit ? " per " + a.e5_debate_unit : "")]);
+    if (hasEvt(a, e => e.fee === "ie") && str(a.e5_ie)) L.push(["Individual events", money(a.e5_ie) + " per entry"]);
+    if (hasEvt(a, e => e.fee === "congress") && str(a.e5_cong)) L.push(["Congress", money(a.e5_cong) + " per entry"]);
+  }
+  if (str(a.b1_other) && str(a.e5_other)) L.push(["Other events", a.e5_other]);
+  if (str(a.e5_school)) L.push(["School fee", money(a.e5_school)]);
+  if (str(a.e5_late)) L.push(["Late fee", money(a.e5_late)]);
+  if (str(a.e5_drop)) L.push(["Drop fee", money(a.e5_drop)]);
+  if (str(a.e5_discounts)) L.push(["Discounts", a.e5_discounts]);
+  if (str(a.e5_pay)) L.push(["Payment", a.e5_pay]);
+  if (str(a.e5_latepay)) L.push(["Late payments", a.e5_latepay]);
+  if (str(a.e5_caps)) L.push(["Entry caps and waitlist", a.e5_caps]);
+  return L;
+}
+const E5_NOT_FEES = ["Discounts", "Payment", "Late payments", "Entry caps and waitlist"];
+function scheduleRows(a) {
+  const days = tournamentDays(a);
+  return (a.e4 || []).filter(Boolean).map(r => ({
+    day: days.includes(r.day) ? r.day : "", time: str(r.time), activity: str(r.activity),
+    ev: evts(a).find(e => e.id === r.event) || null
+  }));
+}
+function textRunsOrLink(x) { return typeof x === "string" ? textRuns(x) : [x]; }
+
+/* ---------- dates ---------- */
+function parseISO(s) { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(str(s)); if (!m) return null; const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])); return isNaN(d) ? null : d; }
+function toISO(d) { return d.toISOString().slice(0, 10); }
+function addDays(d, n) { return new Date(d.getTime() + n * 864e5); }
+const fmtLong = { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" };
+function formatDateRange(s, e) {
+  const S = parseISO(s), E = parseISO(e);
+  if (!S && !E) return "";
+  const one = d => d.toLocaleDateString("en-US", fmtLong);
+  if (S && (!E || +E === +S)) return one(S) + ", " + S.getUTCFullYear();
+  if (!S) return one(E) + ", " + E.getUTCFullYear();
+  if (S.getUTCFullYear() === E.getUTCFullYear()) return one(S) + " – " + one(E) + ", " + E.getUTCFullYear();
+  return one(S) + ", " + S.getUTCFullYear() + " – " + one(E) + ", " + E.getUTCFullYear();
+}
+function tournamentDays(a) {
+  const S = parseISO(a.a1_start), E = parseISO(a.a1_end);
+  if (!S || !E || E < S) return S && !E ? [toISO(S)] : [];
+  const out = []; for (let d = S; d <= E && out.length < 14; d = addDays(d, 1)) out.push(toISO(d));
+  return out;
+}
+function dayLabel(iso) { const d = parseISO(iso); return d ? d.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" }) : ""; }
+function formatTime(t) { const m = /^(\d{1,2}):(\d{2})/.exec(str(t)); if (!m) return str(t); let h = +m[1]; const ap = h < 12 ? "a.m." : "p.m."; h = h % 12 || 12; return h + ":" + m[2] + " " + ap; }
+function fullWeekendFridays(year, month) {
+  const out = [];
+  for (let day = 1; day <= 31; day++) {
+    const d = new Date(Date.UTC(year, month, day)); if (d.getUTCMonth() !== month) break;
+    if (d.getUTCDay() === 5 && addDays(d, 2).getUTCMonth() === month) out.push(d);
+  }
+  return out;
+}
+function iqtWindows(Y) {
+  const W = CONFIG.iqtWindows;
+  const pick = (y, spec) => { let f = fullWeekendFridays(y, spec.month); if (spec.minDay) f = f.filter(d => d.getUTCDate() >= spec.minDay); return spec.pick === "last" ? f[f.length - 1] : f[spec.pick - 1]; };
+  const span = (f1, f2) => [addDays(f1, -W.weekBefore), addDays(f2, W.weekAfter)];
+  const nov1 = new Date(Date.UTC(Y, 10, 1)); const thu = addDays(nov1, ((4 - nov1.getUTCDay()) + 7) % 7 + 21); // 4th Thursday
+  const tgFri = addDays(thu, 1);
+  return {
+    fall: span(pick(Y, W.fallStart), pick(Y, W.fallEnd)),
+    spring: span(pick(Y + 1, W.springStart), pick(Y + 1, W.springEnd)),
+    excluded: W.excludeThanksgivingWeekend ? span(tgFri, tgFri) : null
+  };
+}
+function datesOutsideIQTWindow(S, E) {
+  for (let d = S; d <= E; d = addDays(d, 1)) {
+    const Y = d.getUTCMonth() >= 6 ? d.getUTCFullYear() : d.getUTCFullYear() - 1;
+    const w = iqtWindows(Y);
+    const inR = r => r && d >= r[0] && d <= r[1];
+    if (!(inR(w.fall) || inR(w.spring)) || inR(w.excluded)) return true;
+  }
+  return false;
+}
+
+/* ---------- path helpers ---------- */
+function getPath(o, p) { return p.split(".").reduce((x, k) => (x == null ? undefined : x[k]), o); }
+function setPath(o, p, v) { const ks = p.split("."); let x = o; for (let i = 0; i < ks.length - 1; i++) { if (x[ks[i]] == null || typeof x[ks[i]] !== "object") x[ks[i]] = {}; x = x[ks[i]]; } x[ks[ks.length - 1]] = v; }
+function fid(k) { return "f-" + k.replace(/[^A-Za-z0-9_-]/g, "_"); }
+function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
+
+/* =============================================================================
+   ENGINE: visibility and validation
+   ============================================================================= */
+function inMode(x, a) { return !x.modes || x.modes.includes(a.mode); }
+function qVisible(q, a) { return inMode(q, a) && q.shownWhen(a); }
+function qFields(q, a) { return (typeof q.fields === "function" ? q.fields(a) : q.fields).filter(f => inMode(f, a) && (!f.showIf || f.showIf(a))); }
+function allFields(q, a) { // every field across modes (for defaults)
+  return typeof q.fields === "function" ? q.fields(a) : q.fields;
+}
+function evaluate(a) {
+  const res = [];
+  for (const q of RULES) {
+    if (!qVisible(q, a)) continue;
+    const r = { q, blocks: [], warnings: [], notes: [] };
+    const add = { block: (m, f) => r.blocks.push({ msg: m, field: f }), warn: m => { if (!r.warnings.includes(m)) r.warnings.push(m); }, note: m => r.notes.push(m) };
+    for (const f of qFields(q, a)) {
+      if (f.required && f.type !== "note") {
+        const v = getPath(a, f.id);
+        if (f.type === "checkbox" ? !v : isBlank(v)) add.block(f.required, f.id);
+      }
+    }
+    if (q.validate) q.validate(a, add);
+    res.push(r);
+  }
+  return res;
+}
+function blockList(ev) { return ev.flatMap(r => r.blocks.map(b => ({ q: r.q, ...b }))); }
+
+/* =============================================================================
+   CONTENT MODEL: one structure feeds the HTML, print/PDF, and DOCX renderers.
+   model = { title, sections: [{ title, blocks }], footer }
+   blocks: {t:"h3"|"h4", text} | {t:"p", runs} | {t:"ul"|"ol", items:[{runs, children?}]} | {t:"table", head, rows}
+   runs:   {text, b?, i?, href?} | {br:true}
+   ============================================================================= */
+function buildModel(a) {
+  const parts = {};
+  for (const q of RULES) {
+    if (!qVisible(q, a) || !q.output) continue;
+    const bl = q.output(a) || [];
+    if (bl.length) (parts[q.place] = parts[q.place] || []).push(...bl);
+  }
+  const sections = [];
+  for (const s of SECTIONS) {
+    let blocks = (parts[s.id] || []).slice();
+    for (const sub of s.subs || []) {
+      const p = parts[s.id + "/" + sub.id];
+      if (p && p.length) blocks.push({ t: "h3", text: sub.title }, ...p);
+    }
+    blocks = mergeLists(blocks);
+    if (blocks.length) sections.push({ title: typeof s.title === "string" ? s.title : s.title[a.mode], blocks });
+  }
+  return { title: str(a.a1_name) || "Untitled tournament", sections, footer: a.footer_line !== false ? CONFIG.footerLine : "" };
+}
+function mergeLists(blocks) { // adjacent bullet lists from different questions become one list
+  const out = [];
+  for (const b of blocks) {
+    const last = out[out.length - 1];
+    if (b.t === "ul" && last && last.t === "ul") last.items = last.items.concat(b.items);
+    else out.push(b.t === "ul" || b.t === "ol" ? { ...b, items: b.items.slice() } : b);
+  }
+  return out;
+}
+
+/* =============================================================================
+   RENDERER 1: Tabroom HTML (also used for the live preview and print view).
+   Keep this small: if Tabroom's editor rejects something, adjust only here.
+   Allowed: h2 h3 p ul ol li strong em a br table thead tbody tr th td.
+   ============================================================================= */
+const TAB = {
+  table: ' style="border-collapse:collapse"',
+  cell: ' style="border:1px solid #999999;padding:4px 8px;text-align:left;vertical-align:top"'
+};
+function safeHref(h) { h = str(h); return /^(https?:|mailto:)/i.test(h) ? h : ""; }
+function runsHTML(runs) {
+  return (runs || []).map(r => {
+    if (r.br) return "<br />";
+    let t = esc(r.text);
+    if (r.i) t = "<em>" + t + "</em>";
+    if (r.b) t = "<strong>" + t + "</strong>";
+    const h = r.href && safeHref(r.href);
+    return h ? '<a href="' + esc(h) + '">' + t + "</a>" : t;
+  }).join("");
+}
+function listHTML(b) {
+  return "<" + b.t + ">\n" + b.items.map(it => "<li>" + runsHTML(it.runs) + (it.children ? "\n" + listHTML(it.children) : "") + "</li>").join("\n") + "\n</" + b.t + ">";
+}
+function blockHTML(b) {
+  switch (b.t) {
+    case "h3": return "<h3>" + esc(b.text) + "</h3>";
+    case "h4": return "<p><strong>" + esc(b.text) + "</strong></p>";
+    case "p": return "<p>" + runsHTML(b.runs) + "</p>";
+    case "ul": case "ol": return listHTML(b);
+    case "table":
+      return "<table" + TAB.table + ">\n<thead>\n<tr>" + b.head.map(h => "<th" + TAB.cell + ">" + esc(h) + "</th>").join("") + "</tr>\n</thead>\n<tbody>\n" +
+        b.rows.map(r => "<tr>" + r.map(c => "<td" + TAB.cell + ">" + esc(c) + "</td>").join("") + "</tr>").join("\n") + "\n</tbody>\n</table>";
+  }
+  return "";
+}
+function toTabroomHTML(m) {
+  const out = m.title ? ["<h2>" + esc(m.title) + "</h2>"] : [];
+  for (const s of m.sections) { if (s.title) out.push("<h2>" + esc(s.title) + "</h2>"); s.blocks.forEach(b => out.push(blockHTML(b))); }
+  if (m.footer) out.push("<p><em>" + esc(m.footer) + "</em></p>");
+  return out.join("\n");
+}
+const ALLOWED_TAGS = ["h2", "h3", "p", "ul", "ol", "li", "strong", "em", "a", "br", "table", "thead", "tbody", "tr", "th", "td"];
+function checkTabroomHTML(html) {
+  let doc;
+  try { doc = new DOMParser().parseFromString("<root>" + html + "</root>", "application/xml"); } catch (e) { return { ok: false, msg: "Could not parse the HTML." }; }
+  if (doc.getElementsByTagName("parsererror").length) return { ok: false, msg: "The HTML is not well-formed." };
+  for (const el of doc.getElementsByTagName("*")) {
+    const t = el.tagName;
+    if (t === "root") continue;
+    if (!ALLOWED_TAGS.includes(t)) return { ok: false, msg: "Disallowed tag: <" + t + ">" };
+    for (const at of el.attributes) {
+      const okAttr = (t === "a" && at.name === "href") || (["table", "th", "td"].includes(t) && at.name === "style");
+      if (!okAttr) return { ok: false, msg: "Disallowed attribute " + at.name + " on <" + t + ">" };
+    }
+  }
+  return { ok: true, msg: "Well-formed, and uses only allowed tags." };
+}
+
+/* Plain-text version (for the text/plain clipboard flavor). */
+function toPlainText(m) {
+  const out = [m.title.toUpperCase(), ""];
+  const runsT = rs => rs.map(r => r.br ? "\n" : r.text + (r.href && r.href !== r.text && !r.href.startsWith("mailto:") ? " (" + r.href + ")" : "")).join("");
+  const list = (b, ind) => b.items.forEach((it, i) => { out.push(ind + (b.t === "ol" ? (i + 1) + ". " : "• ") + runsT(it.runs)); if (it.children) list(it.children, ind + "    "); });
+  for (const s of m.sections) {
+    if (s.title) out.push(s.title.toUpperCase());
+    for (const b of s.blocks) {
+      if (b.t === "h3") out.push("", b.text);
+      else if (b.t === "h4") out.push(b.text);
+      else if (b.t === "p") out.push(runsT(b.runs));
+      else if (b.t === "ul" || b.t === "ol") list(b, "");
+      else if (b.t === "table") { out.push(b.head.join(" | ")); b.rows.forEach(r => out.push(r.join(" | "))); }
+    }
+    out.push("");
+  }
+  if (m.footer) out.push(m.footer);
+  return out.join("\n");
+}
+
+/* =============================================================================
+   RENDERER 2: Word .docx, written by hand (no libraries).
+   A stored (uncompressed) ZIP with CRC32, holding the minimal WordprocessingML parts.
+   ============================================================================= */
+const CRC_TABLE = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(bytes) { let c = 0xFFFFFFFF; for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function zipStored(files) {
+  const enc = new TextEncoder(), parts = [], central = [];
+  let offset = 0;
+  const now = new Date();
+  const dTime = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1);
+  const dDate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+  for (const f of files) {
+    const name = enc.encode(f.name), data = typeof f.data === "string" ? enc.encode(f.data) : f.data, crc = crc32(data);
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, 0, true);
+    lh.setUint16(10, dTime, true); lh.setUint16(12, dDate, true); lh.setUint32(14, crc, true);
+    lh.setUint32(18, data.length, true); lh.setUint32(22, data.length, true); lh.setUint16(26, name.length, true); lh.setUint16(28, 0, true);
+    parts.push(new Uint8Array(lh.buffer), name, data);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true); ch.setUint16(10, 0, true);
+    ch.setUint16(12, dTime, true); ch.setUint16(14, dDate, true); ch.setUint32(16, crc, true);
+    ch.setUint32(20, data.length, true); ch.setUint32(24, data.length, true); ch.setUint16(28, name.length, true);
+    ch.setUint16(30, 0, true); ch.setUint16(32, 0, true); ch.setUint16(34, 0, true); ch.setUint16(36, 0, true); ch.setUint32(38, 0, true); ch.setUint32(42, offset, true);
+    central.push(new Uint8Array(ch.buffer), name);
+    offset += 30 + name.length + data.length;
+  }
+  const cdSize = central.reduce((s, c) => s + c.length, 0);
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(4, 0, true); end.setUint16(6, 0, true);
+  end.setUint16(8, files.length, true); end.setUint16(10, files.length, true); end.setUint32(12, cdSize, true); end.setUint32(16, offset, true); end.setUint16(20, 0, true);
+  const all = [...parts, ...central, new Uint8Array(end.buffer)];
+  const out = new Uint8Array(all.reduce((s, c) => s + c.length, 0));
+  let p = 0; for (const c of all) { out.set(c, p); p += c.length; }
+  return out;
+}
+function xesc(s) { return String(s == null ? "" : s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+const W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
+function buildDocxFiles(m) {
+  const links = []; const olNums = [];
+  const tEl = t => '<w:t xml:space="preserve">' + xesc(t) + "</w:t>";
+  const runs = rs => (rs || []).map(r => {
+    if (r.br) return "<w:r><w:br/></w:r>";
+    const rpr = (r.b ? "<w:b/>" : "") + (r.i ? "<w:i/>" : "");
+    const h = r.href && safeHref(r.href);
+    if (h) { const id = "rIdL" + (links.length + 1); links.push({ id, target: h }); return '<w:hyperlink r:id="' + id + '" w:history="1"><w:r><w:rPr><w:rStyle w:val="Hyperlink"/>' + rpr + "</w:rPr>" + tEl(r.text) + "</w:r></w:hyperlink>"; }
+    return "<w:r>" + (rpr ? "<w:rPr>" + rpr + "</w:rPr>" : "") + tEl(r.text) + "</w:r>";
+  }).join("");
+  const para = (inner, pPr) => "<w:p>" + (pPr ? "<w:pPr>" + pPr + "</w:pPr>" : "") + inner + "</w:p>";
+  const body = [];
+  const list = (b, lvl, numId) => {
+    if (numId == null) { if (b.t === "ol") { olNums.push(olNums.length + 2); numId = olNums[olNums.length - 1]; } else numId = 1; }
+    b.items.forEach(it => {
+      body.push(para(runs(it.runs), '<w:pStyle w:val="ListParagraph"/><w:numPr><w:ilvl w:val="' + lvl + '"/><w:numId w:val="' + numId + '"/></w:numPr>'));
+      if (it.children) list(it.children, Math.min(lvl + 1, 1), it.children.t === "ol" ? null : 1);
+    });
+  };
+  const table = b => {
+    const n = b.head.length, w = Math.floor(9360 / n);
+    const cell = (inner, hdr) => '<w:tc><w:tcPr><w:tcW w:w="' + w + '" w:type="dxa"/></w:tcPr>' + para(hdr ? runs([{ text: inner, b: true }]) : runs([{ text: inner }]), '<w:spacing w:before="40" w:after="40"/>') + "</w:tc>";
+    body.push('<w:tbl><w:tblPr><w:tblStyle w:val="TableGrid"/><w:tblW w:w="5000" w:type="pct"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="0" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr><w:tblGrid>' +
+      b.head.map(() => '<w:gridCol w:w="' + w + '"/>').join("") + "</w:tblGrid>" +
+      '<w:tr><w:trPr><w:cantSplit/><w:tblHeader/></w:trPr>' + b.head.map(h => cell(h, true)).join("") + "</w:tr>" +
+      b.rows.map(r => '<w:tr><w:trPr><w:cantSplit/></w:trPr>' + r.map(c => cell(c, false)).join("") + "</w:tr>").join("") + "</w:tbl>");
+    body.push(para("", '<w:spacing w:after="0"/>'));
+  };
+  body.push(para(runs([{ text: m.title }]), '<w:pStyle w:val="Title"/>'));
+  for (const s of m.sections) {
+    if (s.title) body.push(para(runs([{ text: s.title }]), '<w:pStyle w:val="Heading1"/>'));
+    for (const b of s.blocks) {
+      if (b.t === "h3") body.push(para(runs([{ text: b.text }]), '<w:pStyle w:val="Heading2"/>'));
+      else if (b.t === "h4") body.push(para(runs([{ text: b.text }]), '<w:pStyle w:val="Heading3"/>'));
+      else if (b.t === "p") body.push(para(runs(b.runs)));
+      else if (b.t === "ul" || b.t === "ol") list(b, 0, null);
+      else if (b.t === "table") table(b);
+    }
+  }
+  if (m.footer) body.push(para(runs([{ text: m.footer, i: true }]), '<w:spacing w:before="240"/>'));
+
+  const document = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:document ' + W_NS + "><w:body>" + body.join("") +
+    '<w:sectPr><w:footerReference w:type="default" r:id="rIdFtr"/><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body></w:document>';
+
+  const lvl = (i, fmt, text, ind) => '<w:lvl w:ilvl="' + i + '"><w:start w:val="1"/><w:numFmt w:val="' + fmt + '"/><w:lvlText w:val="' + text + '"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="' + ind + '" w:hanging="360"/></w:pPr>' +
+    (fmt === "bullet" ? '<w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/></w:rPr>' : "") + "</w:lvl>";
+  const numbering = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:numbering ' + W_NS + ">" +
+    '<w:abstractNum w:abstractNumId="0"><w:multiLevelType w:val="hybridMultilevel"/>' + lvl(0, "bullet", "•", 720) + lvl(1, "bullet", "◦", 1440) + "</w:abstractNum>" +
+    '<w:abstractNum w:abstractNumId="1"><w:multiLevelType w:val="hybridMultilevel"/>' + lvl(0, "decimal", "%1.", 720) + lvl(1, "lowerLetter", "%2.", 1440) + "</w:abstractNum>" +
+    '<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num>' +
+    olNums.map(n => '<w:num w:numId="' + n + '"><w:abstractNumId w:val="1"/><w:lvlOverride w:ilvl="0"><w:startOverride w:val="1"/></w:lvlOverride></w:num>').join("") +
+    "</w:numbering>";
+
+  const heading = (id, name, lvlN, size, before) => '<w:style w:type="paragraph" w:styleId="' + id + '"><w:name w:val="' + name + '"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:uiPriority w:val="9"/><w:qFormat/>' +
+    '<w:pPr><w:keepNext/><w:keepLines/><w:spacing w:before="' + before + '" w:after="80"/><w:outlineLvl w:val="' + lvlN + '"/></w:pPr><w:rPr><w:b/><w:color w:val="1F2A44"/><w:sz w:val="' + size + '"/><w:szCs w:val="' + size + '"/></w:rPr></w:style>';
+  const styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:styles ' + W_NS + ">" +
+    '<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:eastAsia="Calibri" w:cs="Calibri"/><w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="en-US"/></w:rPr></w:rPrDefault>' +
+    '<w:pPrDefault><w:pPr><w:spacing w:after="120" w:line="264" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>' +
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>' +
+    '<w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:after="200"/></w:pPr><w:rPr><w:b/><w:sz w:val="40"/><w:szCs w:val="40"/></w:rPr></w:style>' +
+    heading("Heading1", "heading 1", 0, 30, 320) + heading("Heading2", "heading 2", 1, 25, 220) + heading("Heading3", "heading 3", 2, 22, 160) +
+    '<w:style w:type="paragraph" w:styleId="ListParagraph"><w:name w:val="List Paragraph"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:after="60"/><w:ind w:left="720"/><w:contextualSpacing/></w:pPr></w:style>' +
+    '<w:style w:type="character" w:default="1" w:styleId="DefaultParagraphFont"><w:name w:val="Default Paragraph Font"/><w:uiPriority w:val="1"/><w:semiHidden/></w:style>' +
+    '<w:style w:type="character" w:styleId="Hyperlink"><w:name w:val="Hyperlink"/><w:basedOn w:val="DefaultParagraphFont"/><w:rPr><w:color w:val="1F4E99"/><w:u w:val="single"/></w:rPr></w:style>' +
+    '<w:style w:type="table" w:default="1" w:styleId="TableNormal"><w:name w:val="Normal Table"/><w:semiHidden/><w:tblPr><w:tblInd w:w="0" w:type="dxa"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style>' +
+    '<w:style w:type="table" w:styleId="TableGrid"><w:name w:val="Table Grid"/><w:basedOn w:val="TableNormal"/><w:tblPr><w:tblBorders>' +
+    ["top", "left", "bottom", "right", "insideH", "insideV"].map(s => '<w:' + s + ' w:val="single" w:sz="4" w:space="0" w:color="999999"/>').join("") +
+    "</w:tblBorders></w:tblPr></w:style></w:styles>";
+
+  const footer = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:ftr ' + W_NS + '><w:p><w:pPr><w:jc w:val="center"/></w:pPr>' +
+    '<w:r><w:rPr><w:sz w:val="18"/></w:rPr><w:t xml:space="preserve">Page </w:t></w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGE </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:sz w:val="18"/></w:rPr><w:t>1</w:t></w:r><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p></w:ftr>';
+
+  const R = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/";
+  const docRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+    '<Relationship Id="rIdStyles" Type="' + R + 'styles" Target="styles.xml"/>' +
+    '<Relationship Id="rIdNum" Type="' + R + 'numbering" Target="numbering.xml"/>' +
+    '<Relationship Id="rIdFtr" Type="' + R + 'footer" Target="footer1.xml"/>' +
+    links.map(l => '<Relationship Id="' + l.id + '" Type="' + R + 'hyperlink" Target="' + xesc(l.target) + '" TargetMode="External"/>').join("") + "</Relationships>";
+  const rootRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="' + R + 'officeDocument" Target="word/document.xml"/></Relationships>';
+  const ct = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>' +
+    '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+    '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+    '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' +
+    '<Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/></Types>';
+  return [
+    { name: "[Content_Types].xml", data: ct },
+    { name: "_rels/.rels", data: rootRels },
+    { name: "word/document.xml", data: document },
+    { name: "word/styles.xml", data: styles },
+    { name: "word/numbering.xml", data: numbering },
+    { name: "word/footer1.xml", data: footer },
+    { name: "word/_rels/document.xml.rels", data: docRels }
+  ];
+}
+function toDocxBytes(m) { return zipStored(buildDocxFiles(m)); }
+function toWordHtmlDoc(m) { // fallback .doc
+  return '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>' +
+    esc(m.title) + "</title></head><body>" + toTabroomHTML(m) + "</body></html>";
+}
+function fileBase(a) {
+  const s = str(a.a1_name).toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
+  return (s || "tournament") + "-invitation";
+}
+
+/* =============================================================================
+   STORAGE: localStorage when available; the tool still works without it.
+   ============================================================================= */
+const store = {
+  ok: false,
+  probe() { try { const k = CONFIG.storageKey + ":probe"; localStorage.setItem(k, "1"); localStorage.removeItem(k); this.ok = true; } catch (e) { this.ok = false; } return this.ok; },
+  load() { if (!this.ok) return null; try { const s = localStorage.getItem(CONFIG.storageKey); return s ? JSON.parse(s) : null; } catch (e) { return null; } },
+  save(v) { if (!this.ok) return; try { localStorage.setItem(CONFIG.storageKey, JSON.stringify(v)); } catch (e) { this.ok = false; showStorageBanner(); } },
+  clear() { try { localStorage.removeItem(CONFIG.storageKey); } catch (e) { /* ignore */ } }
+};
+
+/* =============================================================================
+   UI
+   ============================================================================= */
+const S = { a: { mode: "required" }, step: "basics", screen: "intro", override: null, dirty: false };
+const $ = id => document.getElementById(id);
+
+function applyDefaults(a) {
+  for (const q of RULES) for (const f of allFieldsAllModes(q, a)) if (f.default !== undefined && getPath(a, f.id) === undefined) setPath(a, f.id, f.default);
+  if (a.footer_line === undefined) a.footer_line = true;
+  if (!a.events) a.events = [];
+}
+function allFieldsAllModes(q, a) { const m = a.mode; const out = []; for (const md of ["required", "detailed"]) { a.mode = md; out.push(...allFields(q, a)); } a.mode = m; return out; }
+function save() { S.dirty = true; store.save({ a: S.a, step: S.step, screen: S.screen }); }
+function showStorageBanner() { $("storage-banner").hidden = store.ok; }
+
+function visibleSteps() {
+  return STEPS.filter(st => inMode(st, S.a) && (st.id === "review" || RULES.some(q => q.step === st.id && qVisible(q, S.a))));
+}
+function announce(msg) { const t = $("toast"); t.textContent = ""; setTimeout(() => { t.textContent = msg; t.classList.add("show"); }, 30); clearTimeout(announce.tm); announce.tm = setTimeout(() => t.classList.remove("show"), 4000); }
+
+/* ---------- static text from CONFIG ---------- */
+function initStatic() {
+  $("app-tagline").textContent = CONFIG.tagline;
+  document.querySelectorAll(".js-disclaimer").forEach(el => el.textContent = CONFIG.disclaimer);
+  $("footer-version").textContent = "Rules version: " + CONFIG.rulesVersion;
+  const fl = $("footer-link"); fl.href = CONFIG.tfaUrl; fl.textContent = "texasforensicassociation.com (opens in a new tab)";
+  const ab = $("about-text");
+  ab.textContent = "";
+  ab.append(CONFIG.toolName + " was built to reflect the TFA Constitution and Contest Rules posted at ");
+  const l = document.createElement("a"); l.href = CONFIG.tfaUrl; l.target = "_blank"; l.rel = "noopener noreferrer"; l.textContent = CONFIG.tfaUrl;
+  ab.append(l, " (version used: " + CONFIG.rulesVersionAbout + "). Rules change, so always confirm against the current version on the TFA website before you publish your invitation.");
+  $("mode-seg").innerHTML = Object.entries(CONFIG.modes).map(([k, m]) =>
+    '<input type="radio" name="mode-top" id="mode-top-' + k + '" value="' + k + '"><label for="mode-top-' + k + '">' + esc(m.label) + "</label>").join("");
+  $("intro-modes").innerHTML = Object.entries(CONFIG.modes).map(([k, m]) =>
+    '<label class="mode-card"><input type="radio" name="mode-intro" value="' + k + '"><strong>' + esc(m.label) + '</strong><span class="desc">' + esc(m.desc) + "</span></label>").join("");
+}
+function syncModeInputs() {
+  document.querySelectorAll('input[name="mode-top"],input[name="mode-intro"]').forEach(r => r.checked = r.value === S.a.mode);
+}
+function setMode(m) {
+  if (m === S.a.mode) return;
+  S.a.mode = m; applyDefaults(S.a);
+  const vis = visibleSteps().map(s => s.id);
+  if (!vis.includes(S.step)) S.step = vis.includes("review") && S.step !== "basics" ? "review" : vis[0];
+  save(); syncModeInputs(); render();
+  announce("Switched to " + CONFIG.modes[m].label + ".");
+}
+
+/* ---------- field renderers ---------- */
+function optsInline(f) { return f.inline ? " opt-inline" : ""; }
+function renderField(f, a) {
+  const id = fid(f.id), v = getPath(a, f.id);
+  const help = f.help ? '<p class="fhelp" id="' + id + '-help">' + esc(f.help) + "</p>" : "";
+  const dby = f.help ? ' aria-describedby="' + id + '-help"' : "";
+  const rr = f.rerender ? " data-rerender" : "";
+  const req = f.required ? ' aria-required="true"' : "";
+  const lab = typeof f.label === "function" ? f.label(a) : f.label;
+  switch (f.type) {
+    case "text": case "email": case "tel": case "url": case "date": case "number": case "time": {
+      const extra = (f.type === "number" ? ' inputmode="numeric" min="' + (f.min != null ? f.min : 0) + '"' + (f.max ? ' max="' + f.max + '"' : "") : "") +
+        (f.inputmode ? ' inputmode="' + f.inputmode + '"' : "") + (f.placeholder ? ' placeholder="' + esc(f.placeholder) + '"' : "") +
+        ' autocomplete="' + (f.autocomplete || "off") + '"';
+      return '<div class="field"><label for="' + id + '">' + esc(lab) + "</label>" + help + '<input id="' + id + '" type="' + f.type + '" data-k="' + esc(f.id) + '" value="' + esc(v == null ? "" : v) + '"' + dby + rr + req + extra + "></div>";
+    }
+    case "textarea":
+      return '<div class="field"><label for="' + id + '">' + esc(lab) + "</label>" + help + '<textarea id="' + id + '" rows="' + (f.rows || 3) + '" data-k="' + esc(f.id) + '"' + dby + req + ">" + esc(v || "") + "</textarea></div>";
+    case "select":
+      return '<div class="field"><label for="' + id + '">' + esc(lab) + "</label>" + help + '<select id="' + id + '" data-k="' + esc(f.id) + '"' + dby + req + '><option value="">Choose…</option>' +
+        f.options.map(o => '<option value="' + esc(o.v) + '"' + (v === o.v ? " selected" : "") + ">" + esc(o.l) + "</option>").join("") + "</select></div>";
+    case "radio": case "yesno": {
+      const opts = (f.type === "yesno" ? YESNO : f.options).filter(o => inMode(o, a));
+      return '<fieldset class="field" id="' + id + '"' + dby + '><legend>' + esc(lab) + "</legend>" + help + '<div class="opts' + optsInline(f) + (f.type === "yesno" ? " opt-inline" : "") + '">' +
+        opts.map((o, i) => '<label class="opt" for="' + id + "-" + i + '"><input type="radio" id="' + id + "-" + i + '" name="' + id + '" value="' + esc(o.v) + '" data-k="' + esc(f.id) + '"' + (v === o.v ? " checked" : "") + "><span>" + esc(o.l) + "</span></label>").join("") + "</div></fieldset>";
+    }
+    case "checkbox":
+      return '<div class="field"><label class="opt" for="' + id + '"><input type="checkbox" id="' + id + '" data-k="' + esc(f.id) + '"' + (v ? " checked" : "") + dby + "><span>" + esc(lab) + "</span></label>" + help + "</div>";
+    case "checkgroup": {
+      const cur = Array.isArray(v) ? v : [];
+      return '<fieldset class="field" id="' + id + '"' + dby + "><legend>" + esc(lab) + "</legend>" + help + '<div class="opts' + optsInline(f) + '">' +
+        f.options.map((o, i) => '<label class="opt" for="' + id + "-" + i + '"><input type="checkbox" id="' + id + "-" + i + '" data-k="' + esc(f.id) + '" data-opt="' + esc(o.v) + '"' + (cur.includes(o.v) ? " checked" : "") + "><span>" + esc(o.l) + "</span></label>").join("") + "</div></fieldset>";
+    }
+    case "note":
+      return '<div class="msg ' + (f.kind || "note") + ' inline-note" role="note"><strong>' + (f.kind === "warn" ? "Important: " : "Note: ") + "</strong>" + esc(f.text) + "</div>";
+    case "computed":
+      return '<p class="computed" id="' + id + '">' + esc(f.text(a)) + "</p>";
+    case "events": return renderEvents(a);
+    case "table": return renderTable(f, a);
+  }
+  return "";
+}
+function renderEvents(a) {
+  const on = a.events || [];
+  let h = '<div class="btn-row"><button type="button" class="btn small" data-act="ev-all">Select all events</button><button type="button" class="btn small" data-act="ev-none">Clear all events</button></div>';
+  for (const g of CONFIG.eventGroups) {
+    const list = CONFIG.events.filter(e => e.group === g.id);
+    h += '<fieldset class="group-box" id="f-events-' + g.id + '"><legend>' + esc(g.label) + "</legend>" +
+      '<div class="btn-row"><button type="button" class="btn small" data-act="ev-all" data-group="' + g.id + '">Select all ' + esc(g.label.toLowerCase()) + '</button><button type="button" class="btn small" data-act="ev-none" data-group="' + g.id + '">Clear all ' + esc(g.label.toLowerCase()) + "</button></div>" +
+      list.map(e => '<label class="opt" for="f-ev-' + e.id + '"><input type="checkbox" id="f-ev-' + e.id + '" data-k="events" data-opt="' + e.id + '"' + (on.includes(e.id) ? " checked" : "") + "><span>" + esc(e.name) + "</span></label>").join("") +
+      "</fieldset>";
+  }
+  return '<div class="field" id="f-events">' + h + '<p class="computed" aria-live="polite">' + on.length + " event" + (on.length === 1 ? "" : "s") + " checked.</p></div>";
+}
+function renderTable(f, a) {
+  const id = fid(f.id);
+  let list = getPath(a, f.id);
+  if (!Array.isArray(list)) list = [];
+  while (list.length < (f.minRows || 0)) list.push({});
+  setPath(a, f.id, list);
+  const cols = f.columns.filter(c => inMode(c, a));
+  const lab = typeof f.label === "function" ? f.label(a) : f.label;
+  let h = '<fieldset class="field" id="' + id + '"><legend>' + esc(lab) + "</legend>" + (f.help ? '<p class="fhelp">' + esc(f.help) + "</p>" : "") +
+    (f.emptyNote ? '<p class="fhelp">' + esc(f.emptyNote) + "</p>" : "");
+  if (list.length) {
+    h += '<div class="tbl-wrap"><table class="edit"><thead><tr><th scope="col"><span class="sr-only">Row</span></th>' + cols.map(c => '<th scope="col"' + (c.width ? ' style="width:' + c.width + '"' : "") + ">" + esc(c.label) + "</th>").join("") + '<th scope="col"><span class="sr-only">Actions</span></th></tr></thead><tbody>';
+    list.forEach((r, i) => {
+      r = r || {};
+      const rl = f.rowLabel ? f.rowLabel(i) : "Row " + (i + 1);
+      h += '<tr><th scope="row">' + esc(rl) + "</th>";
+      for (const c of cols) {
+        const cid = id + "-" + i + "-" + c.key, cv = r[c.key] == null ? "" : r[c.key];
+        const attrs = ' id="' + cid + '" data-k="' + esc(f.id) + '" data-row="' + i + '" data-col="' + c.key + '" aria-label="' + esc(c.label + ", " + rl) + '"';
+        let inner;
+        if (c.showIf && !c.showIf(r)) inner = '<span class="tbl-empty">Announced at the round</span>';
+        else if (c.type === "select") inner = "<select" + attrs + '><option value="">Choose…</option>' + (typeof c.options === "function" ? c.options() : c.options).map(o => '<option value="' + esc(o.v) + '"' + (cv === o.v ? " selected" : "") + ">" + esc(o.l) + "</option>").join("") + "</select>";
+        else inner = '<input type="' + c.type + '"' + attrs + ' value="' + esc(cv) + '"' + (c.type === "number" ? ' inputmode="numeric" min="0"' : "") + (c.placeholder ? ' placeholder="' + esc(c.placeholder) + '"' : "") + ' autocomplete="off">';
+        h += '<td data-label="' + esc(c.label) + '">' + inner + "</td>";
+      }
+      h += '<td><button type="button" class="btn small" data-act="rmrow" data-k="' + esc(f.id) + '" data-row="' + i + '" aria-label="Remove ' + esc(rl) + '">Remove</button></td></tr>';
+    });
+    h += "</tbody></table></div>";
+  }
+  h += '<button type="button" class="btn small" data-act="addrow" data-k="' + esc(f.id) + '">+ ' + esc(f.addLabel || "Add row") + "</button></fieldset>";
+  return h;
+}
+
+/* ---------- question & step rendering ---------- */
+function renderQuestion(q, a) {
+  const why = a.mode === "required" && q.whyRequired ? q.whyRequired : q.why;
+  const help = a.mode === "detailed" && q.helpDetailed ? q.helpDetailed : q.help;
+  return '<section class="q" id="q-' + q.id + '" aria-labelledby="qh-' + q.id + '">' +
+    '<div class="q-head"><h3 id="qh-' + q.id + '" tabindex="-1"><span class="qid">' + q.id + "</span>" + esc(q.title) + "</h3>" +
+    '<span class="tag ' + q.level + '">' + q.level + "</span>" +
+    (why ? '<button type="button" class="why-btn" data-act="why" aria-expanded="false" aria-controls="why-' + q.id + '">Why?</button>' : "") + "</div>" +
+    (why ? '<div class="why" id="why-' + q.id + '" hidden>' + esc(why) + "</div>" : "") +
+    (q.question ? "<p><strong>" + esc(q.question) + "</strong></p>" : "") +
+    (help ? '<p class="help">' + esc(help) + "</p>" : "") +
+    qFields(q, a).map(f => {
+      if (f.half) return '<div class="half-cell">' + renderField(f, a) + "</div>";
+      return renderField(f, a);
+    }).join("") +
+    '<div class="msgs" id="msg-' + q.id + '"></div></section>';
+}
+function renderStep(focusId) {
+  const a = S.a;
+  const vis = visibleSteps();
+  if (!vis.find(s => s.id === S.step)) S.step = vis[0].id;
+  const idx = vis.findIndex(s => s.id === S.step), st = vis[idx];
+  let html = '<h2 class="step-title" id="step-title" tabindex="-1">' + esc(st.title) + "</h2>";
+  if (st.id === "review") html += renderReview();
+  else for (const q of RULES) if (q.step === st.id && qVisible(q, a)) html += renderQuestion(q, a);
+  const body = $("step-body");
+  const openWhy = [...body.querySelectorAll('.why-btn[aria-expanded="true"]')].map(b => b.getAttribute("aria-controls"));
+  body.innerHTML = html;
+  groupHalfCells(body);
+  openWhy.forEach(w => { const p = $(w); if (p) { p.hidden = false; const b = body.querySelector('[aria-controls="' + w + '"]'); if (b) b.setAttribute("aria-expanded", "true"); } });
+  if (st.id === "review") afterReviewRender();
+  // progress
+  $("progress-label").textContent = "Step " + (idx + 1) + " of " + vis.length + ": " + st.title;
+  const pct = Math.round(((idx + 1) / vis.length) * 100);
+  const bar = $("progress-bar"); bar.setAttribute("aria-valuenow", pct); bar.setAttribute("aria-valuetext", "Step " + (idx + 1) + " of " + vis.length); bar.firstElementChild.style.width = pct + "%";
+  $("steps").innerHTML = vis.map((s, i) => '<li><button type="button" data-step="' + s.id + '"' + (s.id === S.step ? ' aria-current="step"' : "") + ">" + (i + 1) + ". " + esc(s.title) + "</button></li>").join("");
+  $("btn-back").hidden = idx === 0;
+  $("btn-next").hidden = idx === vis.length - 1;
+  if (focusId) { const el = $(focusId); if (el) el.focus({ preventScroll: true }); }
+  refreshLive();
+}
+function groupHalfCells(root) { // put adjacent half-width fields side by side
+  const cells = [...root.querySelectorAll(".half-cell")];
+  cells.forEach(c => {
+    if (c.parentElement.classList.contains("half-row")) return;
+    const row = document.createElement("div"); row.className = "half-row";
+    c.before(row);
+    let n = c;
+    while (n && n.classList && n.classList.contains("half-cell")) { const next = n.nextElementSibling; row.appendChild(n); n = next; }
+  });
+}
+function goStep(id, focusQ) {
+  S.step = id; save(); renderStep();
+  window.scrollTo({ top: 0 });
+  const t = focusQ ? $("qh-" + focusQ) : $("step-title");
+  if (t) { t.focus(); if (focusQ) t.scrollIntoView({ block: "start" }); }
+  setTab("form");
+}
+function goQuestion(qid) { const q = RULES.find(r => r.id === qid); if (q) goStep(q.step, qid); }
+
+/* ---------- live refresh (messages, preview, status) ---------- */
+function refreshLive() {
+  const a = S.a, ev = evaluate(a), blocks = blockList(ev);
+  for (const r of ev) {
+    const box = $("msg-" + r.q.id);
+    if (!box) continue;
+    box.innerHTML = r.blocks.map(b => '<div class="msg block"><strong>Needed:</strong> ' + esc(b.msg) + "</div>").join("") +
+      r.warnings.map(w => '<div class="msg warn"><strong>Warning:</strong> ' + esc(w) + "</div>").join("") +
+      r.notes.map(n => '<div class="msg note"><strong>Note:</strong> ' + esc(n) + "</div>").join("");
+  }
+  const bad = new Set(blocks.map(b => b.field).filter(Boolean));
+  document.querySelectorAll("#step-body [data-k]").forEach(el => {
+    const k = el.dataset.k;
+    if (bad.has(k) && !el.dataset.row) el.setAttribute("aria-invalid", "true"); else el.removeAttribute("aria-invalid");
+  });
+  const comp = $("f-c5_ws_count"); if (comp) comp.textContent = RULES.find(q => q.id === "C5").fields(a).find(f => f.id === "c5_ws_count").text(a);
+  const evCount = document.querySelector("#f-events .computed"); if (evCount) { const n = (a.events || []).length; evCount.textContent = n + " event" + (n === 1 ? "" : "s") + " checked."; }
+  const model = buildModel(a);
+  $("preview-body").innerHTML = toTabroomHTML(model);
+  const ps = $("preview-status");
+  if (blocks.length) { ps.className = "preview-status bad"; ps.textContent = blocks.length + " item" + (blocks.length === 1 ? "" : "s") + " need attention"; }
+  else { ps.className = "preview-status ok"; ps.textContent = "Ready"; }
+  $("progress-count").textContent = blocks.length ? blocks.length + " needed" : "All required items complete";
+  if (S.step === "review" && !refreshLive.inReview) { refreshLive.inReview = true; const f = document.activeElement && document.activeElement.id; renderReviewInPlace(f); refreshLive.inReview = false; }
+}
+
+/* ---------- review ---------- */
+function overrideValid(blocks) { return S.override && blocks.every(b => S.override.includes(b.q.id + "|" + b.msg)); }
+function renderReview() {
+  const a = S.a, ev = evaluate(a), blocks = blockList(ev);
+  const row = r => {
+    const ok = !r.blocks.length;
+    return '<li><span class="status-pill ' + (ok ? "pass" : "fail") + '">' + (ok ? "Pass" : "Needs attention") + "</span> <span><strong>" + r.q.id + "</strong> " + esc(r.q.title) + "</span> " +
+      '<button type="button" class="link-btn" data-goto="' + r.q.id + '">Go to ' + r.q.id + "</button>" +
+      (ok ? "" : '<span class="detail">' + r.blocks.map(b => esc(b.msg)).join(" ") + "</span>") + "</li>";
+  };
+  const C = ev.filter(r => r.q.id[0] === "C"), Dd = ev.filter(r => r.q.id[0] === "D"), O = ev.filter(r => !"CD".includes(r.q.id[0]) && (r.q.level === "Required" || r.blocks.length));
+  const warns = ev.flatMap(r => r.warnings.map(w => ({ q: r.q, w })));
+  let h = '<section class="card"><h3>Compliance checklist</h3>' +
+    "<h4>TFA required disclosures</h4><ul class=\"checklist\">" + C.map(row).join("") + "</ul>" +
+    (Dd.length ? "<h4>Conditional disclosures (you offer Congressional Debate)</h4><ul class=\"checklist\">" + Dd.map(row).join("") + "</ul>" : "") +
+    (O.length ? "<h4>Also needed to build your invitation</h4><ul class=\"checklist\">" + O.map(row).join("") + "</ul>" : "") +
+    "<h4>Warnings (these do not block output)</h4>" +
+    (warns.length ? '<ul class="checklist">' + warns.map(x => '<li><span class="status-pill fail" style="color:var(--warn);background:var(--warn-bg);border-color:var(--warn)">Warning</span> <span><strong>' + x.q.id + "</strong> " + esc(x.w) + '</span> <button type="button" class="link-btn" data-goto="' + x.q.id + '">Go to ' + x.q.id + "</button></li>").join("") + "</ul>" : '<p class="hint">No warnings.</p>') +
+    "</section>";
+  const unlocked = !blocks.length || overrideValid(blocks);
+  h += '<section class="card" id="export-card"><h3>Your invitation</h3>';
+  if (!unlocked) {
+    h += '<div class="gate" role="alert"><p><strong>Final output is blocked.</strong> ' + blocks.length + " item" + (blocks.length === 1 ? " needs" : "s need") + " attention:</p><ul>" +
+      blocks.map(b => "<li><strong>" + b.q.id + "</strong> " + esc(b.q.title) + ": " + esc(b.msg) + "</li>").join("") +
+      '</ul><button type="button" class="btn danger" data-act="override">Generate anyway…</button></div>';
+  } else {
+    if (blocks.length) h += '<div class="gate" role="status"><strong>You chose to generate anyway.</strong> Your invitation is missing: ' + esc(blocks.map(b => b.q.id + " " + b.q.title).filter((v, i, s) => s.indexOf(v) === i).join("; ")) + ".</div>";
+    h += '<div class="field"><label class="opt" for="f-footer_line"><input type="checkbox" id="f-footer_line" data-k="footer_line"' + (a.footer_line !== false ? " checked" : "") + '><span>Add a small "' + esc(CONFIG.footerLine) + '" line at the end</span></label></div>' +
+      '<h4>Paste into Tabroom</h4><p class="hint">' + esc(CONFIG.tabroomHint) + "</p>" +
+      '<div class="btn-row"><button type="button" class="btn primary" data-act="copy-html">Copy HTML</button><button type="button" class="btn" data-act="copy-rich">Copy as formatted text</button><button type="button" class="btn" data-act="dl-html">Download .html</button></div>' +
+      '<p class="hint" id="html-check"></p>' +
+      '<div class="field"><label for="raw-html">Raw HTML (read-only)</label><textarea id="raw-html" class="raw" readonly rows="10"></textarea></div>' +
+      "<h4>Using separate Tabroom pages?</h4><p class=\"hint\">Many hosts put judging, topics, or policies on their own Tabroom pages. Copy one section's HTML at a time:</p>" +
+      '<div class="btn-row">' + buildModel(a).sections.map((s, i) => '<button type="button" class="btn small" data-act="copy-sec" data-i="' + i + '">Copy “' + esc(s.title || "Welcome letter and updates") + '”</button>').join("") + "</div>" +
+      '<h4>PDF and Word</h4><div class="btn-row"><button type="button" class="btn" data-act="print">Print or save as PDF</button><button type="button" class="btn" data-act="docx">Download Word (.docx)</button></div>' +
+      "<p class=\"hint\">In the print dialog, choose 'Save as PDF.'</p>" +
+      '<p class="export-status" id="export-status" role="status" aria-live="polite"></p>';
+  }
+  return h + "</section>";
+}
+function afterReviewRender() {
+  const ta = $("raw-html");
+  if (!ta) return;
+  const html = toTabroomHTML(buildModel(S.a));
+  ta.value = html;
+  const c = checkTabroomHTML(html);
+  $("html-check").textContent = "HTML check: " + c.msg;
+}
+function renderReviewInPlace(focusId) {
+  const body = $("step-body");
+  const scroll = window.scrollY;
+  body.innerHTML = '<h2 class="step-title" id="step-title" tabindex="-1">' + esc(STEPS.find(s => s.id === "review").title) + "</h2>" + renderReview();
+  afterReviewRender();
+  if (focusId) { const el = $(focusId); if (el) el.focus({ preventScroll: true }); }
+  window.scrollTo({ top: scroll });
+}
+
+/* ---------- exports ---------- */
+function currentModel() { return buildModel(S.a); }
+function exportStatus(msg) { const el = $("export-status"); if (el) el.textContent = msg; announce(msg); }
+function download(name, blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1500);
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* fall through */ }
+  const ta = document.createElement("textarea"); ta.value = text; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select(); let ok = false; try { ok = document.execCommand("copy"); } catch (e) { ok = false; } ta.remove(); return ok;
+}
+async function copyRich(m) {
+  const html = toTabroomHTML(m), text = toPlainText(m);
+  try {
+    if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
+      await navigator.clipboard.write([new ClipboardItem({ "text/html": new Blob([html], { type: "text/html" }), "text/plain": new Blob([text], { type: "text/plain" }) })]);
+      return true;
+    }
+  } catch (e) { /* fall through */ }
+  const div = document.createElement("div"); div.innerHTML = html; div.style.position = "fixed"; div.style.left = "-9999px"; document.body.appendChild(div);
+  const r = document.createRange(); r.selectNodeContents(div); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+  let ok = false; try { ok = document.execCommand("copy"); } catch (e) { ok = false; } sel.removeAllRanges(); div.remove(); return ok;
+}
+function fillPrintRoot() { $("print-root").innerHTML = toTabroomHTML(currentModel()); }
+async function doExport(act) {
+  const m = currentModel();
+  if (act === "copy-html") exportStatus((await copyText(toTabroomHTML(m))) ? "HTML copied to your clipboard." : "Copy failed. Select the text in the Raw HTML box and copy it.");
+  else if (act === "copy-rich") exportStatus((await copyRich(m)) ? "Formatted text copied to your clipboard." : "Copy failed. Try Copy HTML instead.");
+  else if (act === "dl-html") {
+    const doc = "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>" + esc(m.title) + "</title>\n</head>\n<body>\n" + toTabroomHTML(m) + "\n</body>\n</html>\n";
+    download(fileBase(S.a) + ".html", new Blob([doc], { type: "text/html;charset=utf-8" }));
+    exportStatus("Downloaded " + fileBase(S.a) + ".html.");
+  } else if (act === "print") { fillPrintRoot(); exportStatus("Opening the print dialog. Choose 'Save as PDF' to make a PDF."); setTimeout(() => window.print(), 50); }
+  else if (act === "docx") {
+    try {
+      const bytes = toDocxBytes(m);
+      download(fileBase(S.a) + ".docx", new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }));
+      exportStatus("Downloaded " + fileBase(S.a) + ".docx.");
+    } catch (e) {
+      download(fileBase(S.a) + ".doc", new Blob([toWordHtmlDoc(m)], { type: "application/msword" }));
+      exportStatus("The .docx file could not be built, so a Word-compatible .doc file was downloaded instead.");
+    }
+  }
+}
+
+/* ---------- tabs (mobile) ---------- */
+function setTab(which) {
+  document.body.classList.toggle("show-preview", which === "preview");
+  $("tab-form").setAttribute("aria-selected", which !== "preview");
+  $("tab-preview").setAttribute("aria-selected", which === "preview");
+}
+
+/* ---------- top-level render ---------- */
+function render() {
+  syncModeInputs();
+  $("screen-intro").hidden = S.screen !== "intro";
+  $("screen-app").hidden = S.screen !== "app";
+  if (S.screen === "app") renderStep();
+}
+
+/* ---------- events ---------- */
+function setFromEl(el) {
+  const a = S.a, k = el.dataset.k;
+  if (el.dataset.row != null) {
+    const list = getPath(a, k) || []; const i = +el.dataset.row;
+    list[i] = list[i] || {}; list[i][el.dataset.col] = el.value; setPath(a, k, list);
+  } else if (el.dataset.opt != null) {
+    let cur = getPath(a, k); cur = Array.isArray(cur) ? cur.slice() : [];
+    if (el.checked && !cur.includes(el.dataset.opt)) cur.push(el.dataset.opt);
+    if (!el.checked) cur = cur.filter(x => x !== el.dataset.opt);
+    if (k === "events") cur = CONFIG.events.map(e => e.id).filter(id => cur.includes(id));
+    setPath(a, k, cur);
+  } else if (el.type === "checkbox") setPath(a, k, el.checked);
+  else setPath(a, k, el.value);
+  if (k === "d2" && a.d2 === "yes" && isBlank(a.d2_deadline) && str(a.a1_entry_deadline)) a.d2_deadline = a.a1_entry_deadline;
+}
+function structural(el) { return el.type === "radio" || el.type === "checkbox" || el.tagName === "SELECT" || el.hasAttribute("data-rerender"); }
+function initEvents() {
+  const form = $("form");
+  form.addEventListener("input", e => {
+    const el = e.target; if (!el.dataset.k || structural(el)) return;
+    setFromEl(el); save(); refreshLiveSoon();
+  });
+  form.addEventListener("change", e => {
+    const el = e.target; if (!el.dataset.k) return;
+    setFromEl(el); save();
+    if (structural(el)) renderStep(el.id); else refreshLive();
+  });
+  form.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.goto) return goQuestion(b.dataset.goto);
+    const act = b.dataset.act; if (!act) return;
+    const a = S.a;
+    if (act === "why") { const p = $(b.getAttribute("aria-controls")); const open = b.getAttribute("aria-expanded") === "true"; b.setAttribute("aria-expanded", String(!open)); p.hidden = open; return; }
+    if (act === "ev-all" || act === "ev-none") {
+      const ids = CONFIG.events.filter(ev => !b.dataset.group || ev.group === b.dataset.group).map(ev => ev.id);
+      const cur = new Set(a.events || []);
+      ids.forEach(id => act === "ev-all" ? cur.add(id) : cur.delete(id));
+      a.events = CONFIG.events.map(ev => ev.id).filter(id => cur.has(id));
+      save(); renderStep(b.id || null);
+      const again = form.querySelector('button[data-act="' + act + '"]' + (b.dataset.group ? '[data-group="' + b.dataset.group + '"]' : ":not([data-group])"));
+      if (again) again.focus();
+      announce((act === "ev-all" ? "Selected " : "Cleared ") + (b.dataset.group ? CONFIG.eventGroups.find(g => g.id === b.dataset.group).label.toLowerCase() : "all events") + ".");
+      return;
+    }
+    if (act === "addrow" || act === "rmrow") {
+      const k = b.dataset.k; const list = (getPath(a, k) || []).slice();
+      const f = findField(k);
+      if (act === "addrow") {
+        const r = {}; if (f) f.columns.forEach(c => { if (c.defaultFn && inMode(c, a)) r[c.key] = c.defaultFn(list); });
+        list.push(r); setPath(a, k, list); save(); renderStep();
+        const first = $(fid(k) + "-" + (list.length - 1) + "-" + (f ? f.columns.filter(c => inMode(c, a)).slice(-1)[0].key : ""));
+        const any = form.querySelector('[data-k="' + k + '"][data-row="' + (list.length - 1) + '"]');
+        (first || any || b).focus(); announce("Row added.");
+      } else {
+        list.splice(+b.dataset.row, 1); setPath(a, k, list); save(); renderStep();
+        const add = form.querySelector('button[data-act="addrow"][data-k="' + k + '"]'); if (add) add.focus(); announce("Row removed.");
+      }
+      return;
+    }
+    if (act === "override") return openOverride();
+    if (act === "copy-sec") {
+      const s = currentModel().sections[+b.dataset.i];
+      if (s) copyText(toTabroomHTML({ title: "", sections: [s], footer: "" })).then(ok =>
+        exportStatus(ok ? "Copied the “" + (s.title || "Welcome letter and updates") + "” section HTML." : "Copy failed. Use the Raw HTML box instead."));
+      return;
+    }
+    if (["copy-html", "copy-rich", "dl-html", "print", "docx"].includes(act)) return doExport(act);
+  });
+  form.addEventListener("keydown", e => {
+    if (e.key === "Escape") { const open = form.querySelector('.why-btn[aria-expanded="true"]'); if (open) { open.click(); open.focus(); } }
+  });
+  $("steps").addEventListener("click", e => { const b = e.target.closest("button[data-step]"); if (b) goStep(b.dataset.step); });
+  $("btn-next").addEventListener("click", () => { const v = visibleSteps(); const i = v.findIndex(s => s.id === S.step); if (i < v.length - 1) goStep(v[i + 1].id); });
+  $("btn-back").addEventListener("click", () => { const v = visibleSteps(); const i = v.findIndex(s => s.id === S.step); if (i > 0) goStep(v[i - 1].id); });
+  $("btn-start").addEventListener("click", () => { S.screen = "app"; save(); render(); $("step-title").focus(); });
+  $("btn-home").addEventListener("click", () => { S.screen = "intro"; save(); render(); $("howto-h").setAttribute("tabindex", "-1"); $("howto-h").focus(); });
+  document.addEventListener("change", e => { if (e.target.name === "mode-top" || e.target.name === "mode-intro") setMode(e.target.value); });
+  $("tab-form").addEventListener("click", () => setTab("form"));
+  $("tab-preview").addEventListener("click", () => setTab("preview"));
+  document.querySelector(".tabs").addEventListener("keydown", e => {
+    if (e.key === "ArrowRight" || e.key === "ArrowLeft") { const toPrev = $("tab-form").getAttribute("aria-selected") === "true"; setTab(toPrev ? "preview" : "form"); $(toPrev ? "tab-preview" : "tab-form").focus(); }
+  });
+  // Clear all
+  $("btn-clear").addEventListener("click", () => openDialog("dlg-clear"));
+  $("dlg-clear-no").addEventListener("click", () => closeDialog("dlg-clear"));
+  $("dlg-clear-yes").addEventListener("click", () => {
+    closeDialog("dlg-clear"); store.clear();
+    const mode = S.a.mode; S.a = { mode }; applyDefaults(S.a); S.step = "basics"; S.override = null; S.dirty = false; S.screen = "intro";
+    save(); S.dirty = false; render(); announce("All answers cleared.");
+  });
+  // Override
+  $("dlg-override-no").addEventListener("click", () => { closeDialog("dlg-override"); const first = blockList(evaluate(S.a))[0]; if (first) goQuestion(first.q.id); });
+  $("dlg-override-yes").addEventListener("click", () => {
+    S.override = blockList(evaluate(S.a)).map(b => b.q.id + "|" + b.msg); closeDialog("dlg-override");
+    renderStep(); const c = $("export-card"); if (c) { c.setAttribute("tabindex", "-1"); c.focus(); }
+    announce("Output generated with missing items.");
+  });
+  window.addEventListener("beforeprint", fillPrintRoot);
+  window.addEventListener("beforeunload", e => { if (!store.ok && S.dirty) { e.preventDefault(); e.returnValue = ""; } });
+}
+const refreshLiveSoon = (() => { let t; return () => { clearTimeout(t); t = setTimeout(refreshLive, 120); }; })();
+function findField(k) { for (const q of RULES) { const f = allFieldsAllModes(q, S.a).find(x => x.id === k); if (f) return f; } return null; }
+function openOverride() {
+  const blocks = blockList(evaluate(S.a));
+  $("dlg-override-list").innerHTML = blocks.map(b => "<li><strong>" + b.q.id + " " + esc(b.q.title) + ":</strong> " + esc(b.msg) + "</li>").join("");
+  openDialog("dlg-override");
+}
+function openDialog(id) { const d = $(id); openDialog.ret = document.activeElement; if (d.showModal) d.showModal(); else d.setAttribute("open", ""); }
+function closeDialog(id) { const d = $(id); if (d.close) d.close(); else d.removeAttribute("open"); if (openDialog.ret && document.contains(openDialog.ret)) openDialog.ret.focus(); }
+
+/* ---------- start ---------- */
+(function init() {
+  initStatic();
+  store.probe();
+  const saved = store.load();
+  if (saved && saved.a) { S.a = saved.a; S.step = saved.step || "basics"; S.screen = saved.screen || "intro"; }
+  if (!CONFIG.modes[S.a.mode]) S.a.mode = "required";
+  applyDefaults(S.a);
+  showStorageBanner();
+  initEvents();
+  render();
+})();
+</script>
+</body>
+</html>
